@@ -69,4 +69,15 @@ describe("delivery adapter", () => {
     expect(second.status).toBe("delivery_unknown");
     expect(sendLive).toHaveBeenCalledTimes(1);
   });
+
+  it("records a definite provider rejection without claiming delivery", async () => {
+    const version = approvedVersion("LIVE");
+    const sendLive = vi.fn().mockResolvedValue({ kind: "failed", reason: "Invalid verified sender" });
+    const result = await deliverVersion(store, version.id, sendLive);
+    expect(result.status).toBe("failed");
+    expect(result.providerReceipt).toBeNull();
+    expect(result.failureReason).toBe("Invalid verified sender");
+    expect((await deliverVersion(store, version.id, sendLive)).status).toBe("failed");
+    expect(sendLive).toHaveBeenCalledTimes(1);
+  });
 });

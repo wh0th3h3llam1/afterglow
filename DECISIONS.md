@@ -137,3 +137,17 @@ Record consequential choices here as dated entries. An entry remains in place if
 **Consequences:** The code can be cloned and reviewed now. TrueForge listed the registered skill locally, but its attachment in a live agent session remains unverified.
 
 **Source:** Public repository creation response, `git ls-remote origin refs/heads/main` matching commit `d0e24a735e17e8aba741c4cede611e131111e96d`, `npm run setup:skill` success, staged file audit, [TrueForge skills](https://github.com/truefoundry/trueforge/blob/main/docs/skills.mdx).
+
+## 2026-10-24 — Interrupted turn restoration
+
+**Status:** Implemented and mocked-SDK verified; live verification pending
+
+**Context:** SQLite restores saved notes and drafts, but an interrupted web process can lose its stream while TrueForge continues a turn. Multiple contacts can also leave one saved draft and one unanswered clarification in the same conversation.
+
+**Decision:** On a read of a processing conversation after its local stream is gone, fetch the latest TrueForge turn and event history. Rebuild only missing run events and pending approval references, then derive the visible state from the authoritative turn. Reserve an in-process guard so regular polling does not duplicate the active stream. Require a `CLARIFY:` final response for a missing detail even when another contact already has a draft.
+
+**Alternatives:** Treat the last SQLite status as final, restart the agent turn from the notes, or automatically resume an uncertain approval. Those approaches leave the desk stuck, duplicate model work, or weaken the approval boundary.
+
+**Consequences:** A restart can recover a completed or paused turn without an automatic send. The SDK snapshot path is tested with a simulated paused turn; its live behavior still needs a credential-backed run. Unsupported pauses are shown as a failure with a pointer to TrueForge's local approval UI.
+
+**Source:** Installed TrueForge SDK `sessions.listEvents` and `sessions.getTurn` types; `src/lib/trueforge-recovery.test.ts` repeated-sync and clarification cases.

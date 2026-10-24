@@ -63,6 +63,15 @@ describe("Afterglow persistence and delivery guards", () => {
     expect(store.decideApproval({ approvalId: approval.id, decision: "allow", sessionId: "session-1", toolCallId: "call-1" }).status).toBe("allowed");
   });
 
+  it("cannot deliver an approved version after the user edits its content", () => {
+    const { draft, version } = readyDraft();
+    const approval = store.addPendingApproval({ draftVersionId: version.id, sessionId: "session-1", turnId: "turn-1", threadId: "main", toolCallId: "call-1", sourceEventId: "event-1" });
+    store.decideApproval({ approvalId: approval.id, decision: "allow", sessionId: "session-1", toolCallId: "call-1" });
+    const replacement = store.reviseDraft(draft.id, version.id, { subject: "Updated subject" });
+    expect(() => store.claimDelivery(version.id)).toThrow(/current/i);
+    expect(() => store.claimDelivery(replacement.id)).toThrow(/approval/i);
+  });
+
   it("refuses a missing address or an address attached to a different person", () => {
     const conversation = store.capture("Met Mira and another attendee. Mira's address was not recorded.", "DRY_RUN");
     const mira = store.saveContact({ conversationId: conversation.id, name: "Mira" });

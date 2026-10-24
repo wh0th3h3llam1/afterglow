@@ -237,6 +237,7 @@ export function createStore(db: AfterglowDb) {
     listApprovals: (draftVersionId: string) => db.select().from(approvals).where(eq(approvals.draftVersionId, draftVersionId)).all(),
     claimDelivery, completeDelivery, recoverStaleDeliveries,
     getDelivery: (draftVersionId: string) => db.select().from(deliveries).where(eq(deliveries.draftVersionId, draftVersionId)).get(),
+    hasRunEvent: (eventId: string) => !!db.select({ id: runEvents.id }).from(runEvents).where(eq(runEvents.eventId, eventId)).get(),
     saveRunEvent: (input: typeof runEvents.$inferInsert) => db.insert(runEvents).values(input).onConflictDoNothing().run(),
     listRunEvents: (conversationId: string) => db.select().from(runEvents).where(eq(runEvents.conversationId, conversationId)).orderBy(runEvents.sequence).all(),
   };

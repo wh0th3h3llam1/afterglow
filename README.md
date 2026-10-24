@@ -99,4 +99,4 @@ Each edit makes a new immutable version. Approval is tied to a pending TrueForge
 & "$nodeDir\node.exe" $npmCli run build
 ```
 
-The tests cover missing email, a mismatched identity, missing promised resource, denial, stale edits, duplicate delivery, dry-run isolation, and uncertain provider outcomes. The live OpenAI/Resend path remains unverified until credentials and a consenting recipient are provided; [PROGRESS.md](PROGRESS.md) records the exact verified state and usage counts.
+The tests cover missing email, a mismatched identity, missing promised resource, denial, edits after approval, duplicate delivery, dry-run isolation, provider rejection and uncertain outcomes, and simulated TrueForge pause recovery. The live OpenAI/Resend path remains unverified until credentials and a consenting recipient are provided; [PROGRESS.md](PROGRESS.md) records the exact verified state and usage counts.
