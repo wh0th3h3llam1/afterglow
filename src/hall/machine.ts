@@ -339,7 +339,7 @@ export function reduce(state: HallState, action: Action): HallState {
 
   switch (action.type) {
     case 'type-note': {
-      if (session.phase !== 'empty') return state
+      if (session.phase === 'processing') return state
       return patch(state, id, { note: action.note, error: '' })
     }
     case 'type-email':
@@ -355,14 +355,21 @@ export function reduce(state: HallState, action: Action): HallState {
       if (session.phase !== 'draft') return state
       return patch(state, id, { body: action.body, error: '' })
     case 'submit-note': {
-      if (session.phase !== 'empty') return state
+      if (session.phase === 'processing') return state
       if (state.connection === 'disconnected') {
         return patch(state, id, { error: 'TrueForge disconnected', event: 'TrueForge disconnected' })
       }
       if (session.note.trim() === '') {
         return patch(state, id, { error: 'Write who you met.' })
       }
-      return patch(state, id, { phase: 'processing', error: '', event: 'Reading what you told me…' })
+      return patch(state, id, {
+        phase: 'processing',
+        error: '',
+        delivery: 'none',
+        awaitingSend: false,
+        sentAt: null,
+        event: 'Reading what you told me…',
+      })
     }
     case 'apply-followup': {
       if (session.phase !== 'processing') return state

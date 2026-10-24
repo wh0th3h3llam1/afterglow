@@ -1,8 +1,11 @@
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import { applyParams, hydrate, initialState, reduce, serialize, STORAGE_KEY, writeQuery } from './hall/machine'
 import type { HallState } from './hall/types'
 import { Hall, webglOk } from './scene/Hall'
+import { AgentRail } from './ui/AgentRail'
+import { classifyVoice, daySummary, finishAgent, matchPeople, startAgent, type HallCommand } from './ui/agents'
 import { Desk } from './ui/Desk'
+import { GraphPage } from './ui/GraphPage'
 import { Landing } from './ui/Landing'
 import { useNarrow, useReducedMotion, useReducedTransparency } from './ui/media'
 
@@ -22,6 +25,44 @@ export function App() {
   const flat = useReducedTransparency()
   const narrow = useNarrow()
   const session = state.sessions[state.activeId]
+  const [page, setPage] = useState(() => (window.location.hash === '#graph' ? 'graph' : 'hall'))
+  const [command, setCommand] = useState<HallCommand | null>(null)
+  const commandNonce = useRef(0)
+
+  function onTranscript(text: string) {
+    if (window.location.hash === '#graph') window.location.hash = '#hall'
+    const intent = classifyVoice(text)
+    const nonce = ++commandNonce.current
+    if (intent.kind === 'day') {
+      const job = startAgent('Day', 'Summarizing this conference')
+      const sentence = daySummary(Object.values(state.sessions), state.eventId)
+      finishAgent(job, sentence)
+      setCommand({ nonce, kind: 'show', query: '', sentence })
+      return
+    }
+    if (intent.kind === 'followup') {
+      const found = matchPeople(intent.name, Object.values(state.sessions))
+      if (found.length === 1) {
+        dispatch({ type: 'select', id: found[0].id })
+        dispatch({ type: 'type-note', note: intent.note })
+        dispatch({ type: 'submit-note' })
+        return
+      }
+      const sentence =
+        found.length > 1
+          ? `${found.length} people match ${intent.name}. Pick one.`
+          : `Nobody named ${intent.name} is in the hall.`
+      setCommand({ nonce, kind: 'show', query: intent.name, sentence })
+      return
+    }
+    setCommand({ nonce, kind: 'search', query: intent.query })
+  }
+
+  useEffect(() => {
+    const sync = () => setPage(window.location.hash === '#graph' ? 'graph' : 'hall')
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
+  }, [])
 
   useEffect(() => {
     sessionStorage.setItem(STORAGE_KEY, serialize(state))
@@ -34,6 +75,13 @@ export function App() {
     if (session.phase !== 'processing') return
     const controller = new AbortController()
     const now = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date())
+    const job = startAgent('Draft', `Drafting a letter for ${session.name}`)
+    let settled = false
+    const settle = (detail: string, failed = false) => {
+      if (settled) return
+      settled = true
+      finishAgent(job, detail, failed)
+    }
     fetch('/api/followup', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -44,13 +92,18 @@ export function App() {
         if (!response.ok) throw new Error('followup failed')
         const data = await response.json()
         if (!data?.name) throw new Error('followup empty')
+        settle(`Letter drafted for ${data.name}`)
         dispatch({ type: 'apply-followup', now, ...data })
       })
       .catch((error) => {
         if (error?.name === 'AbortError') return
+        settle('The draft did not finish.', true)
         dispatch({ type: 'finish-processing', now })
       })
-    return () => controller.abort()
+    return () => {
+      controller.abort()
+      settle('Stopped.', true)
+    }
   }, [session.phase, session.id])
 
   useEffect(() => {
@@ -94,6 +147,13 @@ export function App() {
       email: session.email,
       intro: session.promises.some((item) => item.id === 'intro'),
     })
+    const job = startAgent('Graph', `Saving ${session.name} to the graph`)
+    let settled = false
+    const settle = (detail: string, failed = false) => {
+      if (settled) return
+      settled = true
+      finishAgent(job, detail, failed)
+    }
     fetch('/api/meetings', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -103,13 +163,23 @@ export function App() {
       .then(async (response) => {
         const data = response.ok ? await response.json() : null
         if (data?.chain && data?.raw) {
+          settle(`Saved ${session.name} on the graph.`)
           dispatch({ type: 'set-path', chain: data.chain, raw: data.raw, nodes: data.nodes, edges: data.edges })
+          return
         }
+        settle(response.ok ? `Saved ${session.name} on the graph.` : 'The graph did not save this meeting.', !response.ok)
       })
-      .catch(() => {})
-    return () => controller.abort()
+      .catch((error) => {
+        if (error?.name === 'AbortError') return
+        settle('The graph did not save this meeting.', true)
+      })
+    return () => {
+      controller.abort()
+      settle('Stopped.', true)
+    }
   }, [session.id, session.name, session.org, session.topic, session.email, session.phase])
 
+  if (page === 'graph') return <GraphPage onTranscript={onTranscript} />
   if (!state.entered) return <Landing dispatch={dispatch} />
 
   return (
@@ -123,7 +193,15 @@ export function App() {
         onFallback={() => setRenderer('css')}
         onSelect={(id) => dispatch({ type: 'select', id, toggle: true })}
       />
-      <Desk state={state} dispatch={dispatch} narrow={narrow} renderer={renderer} />
+      <Desk
+        state={state}
+        dispatch={dispatch}
+        narrow={narrow}
+        renderer={renderer}
+        command={command}
+        onTranscript={onTranscript}
+      />
+      <AgentRail />
     </>
   )
 }
