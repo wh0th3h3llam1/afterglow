@@ -1,4 +1,4 @@
-import { askGraph, closeRepoIfLinked, explainFollowup, openOwes, rememberMeeting } from './graph.mjs'
+import { askGraph, closeRepoIfLinked, explainFollowup, openOwes, rememberMeeting, wholeGraph } from './graph.mjs'
 import { loadEnv } from './env.mjs'
 import { readOutbox } from './outbox.mjs'
 import { approveSend, denySend, followup, forgeStatus, phraseFacts } from './forge.mjs'
@@ -25,6 +25,9 @@ export function attach(middlewares) {
     const url = new URL(req.url || '/', 'http://localhost')
     if (!url.pathname.startsWith('/api/')) return next()
     try {
+      if (req.method === 'GET' && url.pathname === '/api/graph') {
+        return send(res, 200, await wholeGraph())
+      }
       if (req.method === 'GET' && url.pathname === '/api/path') {
         const path = await explainFollowup(url.searchParams.get('name') || undefined)
         if (!path) return send(res, 404, { error: 'No path' })

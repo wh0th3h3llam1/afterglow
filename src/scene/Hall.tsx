@@ -184,7 +184,9 @@ function BadgeMesh({
   onSelect: (id: string) => void
 }) {
   const group = useRef<THREE.Group>(null)
+  const tilt = useRef<THREE.Group>(null)
   const stamp = useRef<THREE.Group>(null)
+  const { pointer } = useThree()
   const texture = useBadgeTexture(session, isolated && !active)
   const [x, y, z] = badgePosition(index)
 
@@ -218,6 +220,24 @@ function BadgeMesh({
     }
   }, [showStamp, freeze, proof])
 
+  useFrame(() => {
+    const node = tilt.current
+    if (!node) return
+    if (freeze) {
+      node.rotation.x = 0
+      node.rotation.z = 0
+      node.position.x = 0
+      node.position.y = 0
+      return
+    }
+    const pull = active ? 0.22 : 0.05
+    const ease = active ? 0.07 : 0.035
+    node.rotation.x += (-pointer.y * pull - node.rotation.x) * ease
+    node.rotation.z += (pointer.x * pull - node.rotation.z) * ease
+    node.position.x += ((active ? pointer.x * 0.06 : 0) - node.position.x) * ease
+    node.position.y += ((active ? pointer.y * 0.04 : 0) - node.position.y) * ease
+  })
+
   const face = isolated && !active ? '#6E6A62' : FACE
   const strap = isolated && !active ? '#163D2C' : STRAP
 
@@ -242,6 +262,7 @@ function BadgeMesh({
         </RoundedBox>
       )}
       <group ref={group}>
+        <group ref={tilt}>
         <ClothStrap color={strap} />
         <mesh position={[0, 0.8, 0.04]} castShadow>
           <boxGeometry args={[0.28, 0.1, 0.05]} />
@@ -278,6 +299,7 @@ function BadgeMesh({
             )}
           </group>
         )}
+        </group>
       </group>
     </group>
   )

@@ -113,6 +113,15 @@ describe('afterglow hall', () => {
     expect(state.sessions.new.promises.every((item) => promiseView(item, state.sessions.new) === 'open')).toBe(true)
   })
 
+  it('starts another follow-up when a letter already exists', () => {
+    let state = reduce(initialState(), { type: 'select', id: 'samira' })
+    state = reduce(state, { type: 'type-note', note: 'Met Samira again about the CFP draft.' })
+    state = reduce(state, { type: 'submit-note' })
+    expect(state.sessions.samira.phase).toBe('processing')
+    expect(state.sessions.samira.note).toMatch(/again/)
+    expect(state.sessions.samira.delivery).toBe('none')
+  })
+
   it('writes a skipped letter again without sending it', () => {
     const state = reduce(initialState(), { type: 'select', id: 'samira' })
     const next = reduce(state, { type: 'redraft' })

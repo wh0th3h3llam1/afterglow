@@ -258,7 +258,8 @@ function asNode(value) {
   const label = Array.isArray(value.labels) ? value.labels[0] : 'Node'
   const raw = value.properties?.name || (value.properties?.role === 'self' ? 'You' : label)
   const name = label === 'Topic' ? String(raw).toLowerCase() : String(raw)
-  return { id: `${label}:${name}`, label, name }
+  const key = value.properties?.id || name
+  return { id: `${label}:${key}`, label, name }
 }
 
 async function neighborhood(name, topicName) {
@@ -386,6 +387,39 @@ export async function askGraph(question) {
     sentence,
     people: people.map(({ topics, ...person }) => person),
   }
+}
+
+export async function wholeGraph() {
+  await seedConference()
+  const g = await graph()
+  const result = await g.query(`
+    MATCH (a)-[r]->(b)
+    RETURN a, type(r) AS rel, b
+    LIMIT 800
+  `)
+  const nodes = []
+  const edges = []
+  const seenNodes = new Set()
+  const seenEdges = new Set()
+  for (const row of rowsOf(result)) {
+    const from = asNode(field(row, 0, 'a'))
+    const to = asNode(field(row, 2, 'b'))
+    const rel = String(field(row, 1, 'rel') || 'RELATED')
+    if (from && !seenNodes.has(from.id)) {
+      seenNodes.add(from.id)
+      nodes.push(from)
+    }
+    if (to && !seenNodes.has(to.id)) {
+      seenNodes.add(to.id)
+      nodes.push(to)
+    }
+    if (!from || !to) continue
+    const key = `${from.id}|${rel}|${to.id}`
+    if (seenEdges.has(key)) continue
+    seenEdges.add(key)
+    edges.push({ from: from.id, to: to.id, type: rel })
+  }
+  return { nodes, edges }
 }
 
 export async function openOwes() {

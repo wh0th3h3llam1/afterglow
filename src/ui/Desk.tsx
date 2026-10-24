@@ -2,7 +2,11 @@ import { useEffect, useId, useRef, useState, type Dispatch, type FormEvent } fro
 import gsap from 'gsap'
 import { EVENTS } from '../hall/fixtures'
 import { footerLine, pathView, promiseView, statusWord, visibleIds } from '../hall/machine'
+import { AgentNotice } from './AgentNotice'
+import { runSearch, type HallCommand } from './agents'
+import { Mark } from './Mark'
 import { PathGraph } from './PathGraph'
+import { VoiceButton } from './VoiceButton'
 import type { Action, HallState, Mode, Session } from '../hall/types'
 
 function Words({ text, version }: { text: string; version: number }) {
@@ -67,11 +71,15 @@ export function Desk({
   dispatch,
   narrow,
   renderer,
+  command,
+  onTranscript,
 }: {
   state: HallState
   dispatch: Dispatch<Action>
   narrow: boolean
   renderer: 'webgl' | 'css'
+  command: HallCommand | null
+  onTranscript: (text: string) => void
 }) {
   const session = state.sessions[state.activeId]
   const path = pathView(session)
@@ -81,6 +89,21 @@ export function Desk({
   const [asking, setAsking] = useState(false)
   const [owes, setOwes] = useState<string[] | null>(null)
   const showActions = session.phase === 'draft' || session.phase === 'review'
+  useEffect(() => {
+    if (!command) return
+    if (command.kind === 'show') {
+      setQuestion(command.query)
+      setAnswer({ sentence: command.sentence, people: [] })
+      return
+    }
+    const text = command.query.trim()
+    setQuestion(text)
+    if (!text) return
+    setAsking(true)
+    void runSearch(text)
+      .then((data) => setAnswer(data))
+      .finally(() => setAsking(false))
+  }, [command])
   useEffect(() => {
     setEditing(false)
   }, [session.id, session.version])
@@ -140,10 +163,14 @@ export function Desk({
       </a>
       <div className="grain" aria-hidden="true" />
       <header className="topbar">
-        <p className="brand">Afterglow</p>
+        <p className="brand">
+          <Mark />
+          Afterglow
+        </p>
         <label className="event-select">
-          Event
+          <span className="sr">Conference</span>
           <select
+            aria-label="Conference"
             value={state.eventId}
             onChange={(event) => dispatch({ type: 'set-event', id: event.target.value })}
           >
@@ -161,20 +188,8 @@ export function Desk({
             const text = question.trim()
             if (!text || asking) return
             setAsking(true)
-            void fetch('/api/ask', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ question: text }),
-            })
-              .then(async (response) => {
-                const data = await response.json()
-                setAnswer({
-                  sentence: data.sentence || 'Nothing matched that question.',
-                  people: Array.isArray(data.people) ? data.people : [],
-                  qodo: typeof data.qodo === 'string' ? data.qodo : '',
-                })
-              })
-              .catch(() => setAnswer({ sentence: 'The graph did not answer.', people: [] }))
+            void runSearch(text)
+              .then((data) => setAnswer(data))
               .finally(() => setAsking(false))
           }}
         >
@@ -192,33 +207,40 @@ export function Desk({
           <button className="fill" type="submit" disabled={asking || question.trim() === ''}>
             {asking ? 'Searching' : 'Search'}
           </button>
+          {(matches.length > 0 || answer) && (
+            <div className="search-panel">
+              {matches.length > 0 && (
+                <ul>
+                  {matches.map((item) => (
+                    <li key={item.id}>
+                      <button type="button" onClick={() => dispatch({ type: 'select', id: item.id })}>
+                        <span className="search-name">{item.name}</span>
+                        <span className="search-meta">
+                          {item.org}
+                          {item.conference ? ` · ${item.conference}` : ''}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {answer && (
+                <p className="search-answer">
+                  {answer.sentence}
+                  {answer.qodo ? ` ${answer.qodo}.` : ''}
+                </p>
+              )}
+            </div>
+          )}
         </form>
-      </header>
-      {(matches.length > 0 || answer) && (
-        <div className="search-panel">
-          {matches.length > 0 && (
-            <ul>
-              {matches.map((item) => (
-                <li key={item.id}>
-                  <button type="button" onClick={() => dispatch({ type: 'select', id: item.id })}>
-                    {item.name}
-                    <small>
-                      {item.org}
-                      {item.conference ? ` · ${item.conference}` : ''}
-                    </small>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {answer && (
-            <p>
-              {answer.sentence}
-              {answer.qodo ? ` ${answer.qodo}.` : ''}
-            </p>
-          )}
+        <div className="top-tools">
+          <VoiceButton onTranscript={onTranscript} />
+          <AgentNotice />
+          <a className="nav-link" href="#graph">
+            Graph
+          </a>
         </div>
-      )}
+      </header>
 
       <nav className="hall-nav" aria-label="Badges">
         <button type="button" onClick={() => dispatch({ type: 'step', dir: -1 })}>
@@ -254,7 +276,7 @@ export function Desk({
               id="note"
               name="note"
               value={session.note}
-              readOnly={session.phase !== 'empty'}
+              readOnly={session.phase === 'processing'}
               placeholder="Priya from Nimbus, after the agent talk…"
               autoComplete="off"
               autoFocus={session.phase === 'empty' && !narrow && Boolean(state.chatOpen)}
@@ -276,16 +298,13 @@ export function Desk({
             <button
               className="fill"
               type="submit"
-              disabled={session.phase !== 'empty' || disconnected}
+              disabled={session.phase === 'processing' || disconnected || session.note.trim() === ''}
               aria-busy={session.phase === 'processing'}
             >
               {session.phase === 'processing' && <span className="spinner" aria-hidden="true" />}
               Turn into a follow-up
             </button>
-            {disconnected && <p className="reason">TrueForge disconnected</p>}
-            {session.phase !== 'empty' && !disconnected && (
-              <p className="reason">This badge already has a letter.</p>
-            )}
+            {disconnected && <p className="reason">TrueForge disconnected. Reconnect to write a follow-up.</p>}
           </form>
 
           {state.revealHall && (
@@ -643,17 +662,22 @@ export function Desk({
 
       <button
         type="button"
-        className="footer"
+        className="session-button"
         aria-expanded={state.activityOpen}
+        aria-controls="session-panel"
+        aria-label={footerLine(state)}
         onClick={() => dispatch({ type: 'toggle-activity' })}
       >
-        <span aria-live="polite">{footerLine(state)}</span>
+        Session
       </button>
+      <span className="sr" aria-live="polite">
+        {footerLine(state)}
+      </span>
 
       {renderer === 'css' && <p className="renderer-note">Flat hall. WebGL is unavailable.</p>}
 
       {state.activityOpen && (
-        <section className="drawer" aria-label="Activity">
+        <section className="drawer" id="session-panel" aria-label="Session">
           <p className="drawer-note">
             {session.awaitingSend
               ? 'Waiting for your OK. send_email is paused. Deny sends nothing.'

@@ -7,11 +7,12 @@ const COLOR: Record<string, string> = {
   Topic: '#7ec8e3',
   Promise: '#3cbe78',
   Talk: '#c47a4a',
+  Event: '#d7c4a3',
 }
 
 type Placed = GraphNode & { x: number; y: number }
 
-function layout(nodes: GraphNode[], edges: GraphEdge[]) {
+function layout(nodes: GraphNode[], edges: GraphEdge[], minWidth: number) {
   const depth = new Map<string, number>()
   const root = nodes.find((node) => node.name === 'You') ?? nodes[0]
   if (root) depth.set(root.id, 0)
@@ -33,8 +34,8 @@ function layout(nodes: GraphNode[], edges: GraphEdge[]) {
   })
   const maxColumn = Math.max(0, ...columns.keys())
   const maxRows = Math.max(1, ...[...columns.values()].map((list) => list.length))
-  const width = 520
-  const height = 36 + maxRows * 86
+  const width = Math.max(minWidth, 140 + maxColumn * 240)
+  const height = 48 + maxRows * 96
   const placed: Placed[] = []
   columns.forEach((list, column) => {
     list.forEach((node, row) => {
@@ -67,12 +68,15 @@ export function PathGraph({
   nodes,
   edges,
   caption,
+  wide = false,
 }: {
   nodes: GraphNode[]
   edges: GraphEdge[]
   caption: string
+  wide?: boolean
 }) {
-  const { placed, width, height } = layout(nodes, edges)
+  const { placed, width, height } = layout(nodes, edges, wide ? 1100 : 520)
+  const limit = wide ? 32 : 18
   const at = new Map(placed.map((node) => [node.id, node]))
 
   return (
@@ -100,7 +104,7 @@ export function PathGraph({
               {node.label}
             </text>
             <text className="path-name" x={node.x} y={node.y + 44} textAnchor="middle">
-              {node.name.length > 18 ? `${node.name.slice(0, 17)}…` : node.name}
+              {node.name.length > limit ? `${node.name.slice(0, limit - 1)}…` : node.name}
             </text>
           </g>
         ))}
