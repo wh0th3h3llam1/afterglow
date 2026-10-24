@@ -4,13 +4,13 @@ import { resolve } from "node:path";
 import { openDatabase } from "./db";
 import { createStore } from "./store";
 
-const mocks = vi.hoisted(() => ({ getStore: vi.fn(), listEvents: vi.fn(), getTurn: vi.fn() }));
+const mocks = vi.hoisted(() => ({ getStore: vi.fn(), listEvents: vi.fn(), getTurn: vi.fn(), getSession: vi.fn() }));
 vi.mock("./server-store", () => ({ getStore: mocks.getStore }));
 vi.mock("@truefoundry/trueforge-sdk", () => ({ TrueForge: class {
-  sessions = { listEvents: mocks.listEvents, getTurn: mocks.getTurn };
+  sessions = { listEvents: mocks.listEvents, getTurn: mocks.getTurn, get: mocks.getSession };
 } }));
 
-import { recoverConversation } from "./trueforge";
+import { inspectConversationRuntime, recoverConversation } from "./trueforge";
 
 describe("TrueForge turn recovery", () => {
   let opened: ReturnType<typeof openDatabase>;
@@ -23,6 +23,7 @@ describe("TrueForge turn recovery", () => {
     mocks.getStore.mockReturnValue(store);
     mocks.listEvents.mockReset();
     mocks.getTurn.mockReset();
+    mocks.getSession.mockReset();
   });
   afterEach(() => opened.sqlite.close());
 
@@ -63,5 +64,27 @@ describe("TrueForge turn recovery", () => {
     await recoverConversation(conversation.id);
     expect(store.getConversation(conversation.id)).toMatchObject({ status: "needs_input", question: "What email should I use for Leah?" });
     expect(store.listDrafts(conversation.id)).toHaveLength(1);
+  });
+
+  it("reports actual TrueForge MCP calls without claiming Daytona execution", async () => {
+    const conversation = store.capture("Met Mira and promised to follow up.", "DRY_RUN");
+    store.setConversation(conversation.id, { sessionId: "session-3" });
+    mocks.getSession.mockResolvedValue({ data: { agent: { type: "inline", spec: {
+      model: { name: "openai/gpt-5-4-mini" },
+      skills: [{ name: "followup-voice" }],
+      config: { sandbox: { enabled: true, environmentName: "afterglow-daytona" } },
+    } } } });
+    const events = [
+      { event: { type: "turn.created" } },
+      { event: { type: "model.message", toolCalls: [{ toolInfo: { type: "mcp", serverName: "afterglow", name: "save_draft" } }] } },
+      { event: { type: "tool.approval_required" } },
+    ];
+    mocks.listEvents.mockResolvedValue({ async *[Symbol.asyncIterator]() { yield* events; } });
+
+    expect(await inspectConversationRuntime(conversation.id)).toMatchObject({
+      sessionId: "session-3", model: "openai/gpt-5-4-mini", turnCount: 1,
+      modelMessageCount: 1, mcpToolCalls: ["afterglow.save_draft"], approvalPauseCount: 1,
+      skillAttached: true, sandboxConfigured: true, sandboxEventObserved: false,
+    });
   });
 });

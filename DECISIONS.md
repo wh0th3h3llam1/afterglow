@@ -193,3 +193,17 @@ Record consequential choices here as dated entries. An entry remains in place if
 **Consequences:** The selected conversation's mode and notes agree across the desk after hydration. Changing the form still selects the mode for a new capture; the header continues to describe the selected saved conversation.
 
 **Source:** Browser refresh of the completed DRY RUN conversation and `src/app/desk.tsx`.
+
+## 2026-10-24 — Visible runtime proof and mock-delivery wording
+
+**Status:** Accepted and browser verified.
+
+**Choice:** Add a read-only TrueForge session inspection route and an **Agent verification** panel that shows recorded turns, model messages, MCP tool names, approval pauses, skill attachment, and Daytona sandbox configuration separately from observed execution. Read `AFTERGLOW_MODE` for the new-capture default. Label a successful DRY RUN **Mock email sent to local outbox** and state that no email reached the recipient. When LIVE lacks Resend setup, offer the existing notes for a new DRY RUN capture.
+
+**Why:** The user could not tell whether TrueForge or Daytona had actually run, and a LIVE review produced a Resend configuration error while they expected mock delivery. Session inspection confirms TrueForge model/MCP activity without creating another agent turn. The SDK session specs include Daytona, but current event histories contain no sandbox event.
+
+**Alternatives:** Infer runtime use from a successful draft, call the model again just to demonstrate it, or label DRY RUN as SENT. Those would waste turns or overstate the evidence and delivery outcome.
+
+**Consequences:** The desk now gives a repeatable check of actual TrueForge calls. Daytona is reported as configured while execution remains unverified. LIVE and DRY RUN stay separate immutable conversation modes, and the mock confirmation is explicit without implying recipient delivery.
+
+**Source:** Live TrueForge `sessions.get`/`sessions.listEvents` responses for the latest LIVE and completed DRY RUN sessions, browser checks of the new panel and review path, `src/lib/trueforge-recovery.test.ts`, and the local outbox receipt.

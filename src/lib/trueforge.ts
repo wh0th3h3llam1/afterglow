@@ -159,6 +159,46 @@ export async function recoverConversation(conversationId: string) {
   await withActiveStream(conversationId, () => syncTurnState(conversationId, conversation.sessionId!));
 }
 
+export async function inspectConversationRuntime(conversationId: string) {
+  const conversation = getStore().getConversation(conversationId);
+  if (!conversation) throw new Error("Conversation not found");
+  if (!conversation.sessionId) return {
+    sessionId: null, model: null, turnCount: 0, modelMessageCount: 0,
+    mcpToolCalls: [] as string[], approvalPauseCount: 0,
+    skillAttached: false, sandboxConfigured: false, sandboxEventObserved: false,
+    environmentName: null,
+  };
+
+  const session = await client.sessions.get(conversation.sessionId);
+  const eventPage = await client.sessions.listEvents(conversation.sessionId);
+  const mcpToolCalls: string[] = [];
+  let turnCount = 0;
+  let modelMessageCount = 0;
+  let approvalPauseCount = 0;
+  let sandboxEventObserved = false;
+  for await (const { event } of eventPage) {
+    if (event.type === "turn.created") turnCount++;
+    if (event.type === "model.message") {
+      modelMessageCount++;
+      for (const call of event.toolCalls ?? []) {
+        if (call.toolInfo.type === "mcp") mcpToolCalls.push(`${call.toolInfo.serverName}.${call.toolInfo.name}`);
+      }
+    }
+    if (event.type === "tool.approval_required") approvalPauseCount++;
+    if (event.type.includes("sandbox")) sandboxEventObserved = true;
+  }
+  const spec = session.data.agent?.type === "inline" ? session.data.agent.spec : undefined;
+  return {
+    sessionId: conversation.sessionId,
+    model: spec?.model?.name ?? null,
+    turnCount, modelMessageCount, mcpToolCalls, approvalPauseCount,
+    skillAttached: spec?.skills?.some((skill) => skill.name === "followup-voice") ?? false,
+    sandboxConfigured: spec?.config?.sandbox?.enabled === true && spec.config.sandbox.environmentName === "afterglow-daytona",
+    sandboxEventObserved,
+    environmentName: spec?.config?.sandbox?.environmentName ?? null,
+  };
+}
+
 export async function verifyAndResumeApproval(approvalId: string, decision: "allow" | "deny") {
   const store = getStore();
   const approval = store.getApproval(approvalId);

@@ -82,13 +82,21 @@ Set `AFTERGLOW_SKILL_ENABLED=true` in `.env.local` and restart the web app. The 
 | **DRY RUN** | TrueForge + configured OpenAI model | Local outbox receipt labeled DRY RUN; never claims SENT |
 | **REPLAY** | Recorded fixture only | No model, sandbox, or email-provider calls; review is a preview |
 
+The form reads `AFTERGLOW_MODE` as its default for a new capture. A saved conversation keeps its original mode. With email mocked, choose **DRY RUN**; a LIVE conversation cannot be changed into a mock delivery, but its review screen can copy the notes into a new DRY RUN capture. A completed dry run says **Mock email sent to local outbox** and explicitly says no email reached the recipient.
+
+## Verify actual agent calls
+
+Select a conversation and click **Check actual calls** under **Agent verification**. This read-only check asks the local TrueForge runtime for the session and event history. It displays the session ID, model, turn and model-message counts, MCP tool names, approval pauses, and whether the `followup-voice` skill and Daytona sandbox were configured. A session ID and actual `model.message`/MCP call events prove TrueForge processed that conversation; REPLAY has no session.
+
+Daytona is configured as TrueForge's sandbox provider by `scripts/configure-sandbox.ts` and selected in the agent spec in `src/lib/trueforge.ts`. The desk distinguishes **configured** from **execution observed**. The current sessions show Daytona configured, but no sandbox event was recorded, so sandbox execution is not claimed. DRY RUN outbox delivery itself runs through the local MCP server and does not need Daytona.
+
 Each edit makes a new immutable version. Approval is tied to a pending TrueForge session, turn, tool call, and source event, and the server checks those against the reviewed version before resuming `user.tool_approval`. Each version has one durable delivery intent and one stable idempotency key. An uncertain provider outcome stays **Delivery uncertain** until manually reconciled; no blind retry occurs. Email delivery does not automatically mark a promise kept. The web app has no public send endpoint.
 
 ## Two-minute demo
 
 1. Choose REPLAY, then **Load the sample**. A letter, source notes, and a promise appear.
 2. Use **What you told me**, **Tweak**, and **Review & send** to inspect the exact version. REPLAY clearly says no provider call occurs.
-3. With OpenAI configured, switch to DRY RUN and capture your own notes. Answer a clarification if one is needed. Request final approval, inspect the recipient, subject, body, and URLs, then approve the TrueForge pause. The result is labeled DRY RUN with a local outbox receipt.
+3. With OpenAI configured, switch to DRY RUN and capture your own notes. Use **Check actual calls** to inspect the TrueForge session. Answer a clarification if one is needed. Request final approval, inspect the recipient, subject, body, and URLs, then approve the TrueForge pause. The result says **Mock email sent to local outbox**, with a local receipt and no real delivery.
 4. With Resend configured and a consenting recipient on `TEST_RECIPIENT_ALLOWLIST`, choose LIVE and repeat. Only a confirmed Resend receipt displays SENT.
 
 ## Checks

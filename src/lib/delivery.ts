@@ -42,7 +42,7 @@ export const sendWithResend: LiveSender = async (version, idempotencyKey) => {
 };
 
 export function assertLiveDeliveryReady(recipientEmail: string) {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM) throw new Error("Resend credentials and sender are required for LIVE review");
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM) throw new Error("LIVE review needs Resend credentials and sender. Choose DRY RUN and capture these notes again for a mock email.");
   const allowed = (process.env.TEST_RECIPIENT_ALLOWLIST ?? "").split(",").map((value) => value.trim().toLowerCase());
   if (!allowed.includes(recipientEmail.toLowerCase())) throw new Error("Recipient is not in the consenting test allowlist");
 }
