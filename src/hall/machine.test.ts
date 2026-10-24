@@ -158,6 +158,10 @@ describe('afterglow hall', () => {
     expect(next.eventId).toBe('harbor')
     expect(visibleIds(next)).toContain('priya-harbor')
     expect(visibleIds(next)).not.toContain('priya')
+    const all = reduce(next, { type: 'set-event', id: 'all' })
+    expect(all.eventId).toBe('all')
+    expect(visibleIds(all)).toEqual(expect.arrayContaining(['priya', 'priya-harbor']))
+    expect(reduce(all, { type: 'select', id: 'priya' }).eventId).toBe('all')
   })
 
   it('adds a new meeting to the current hall', () => {

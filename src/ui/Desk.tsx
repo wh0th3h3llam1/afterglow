@@ -67,6 +67,42 @@ function promiseLabel(view: ReturnType<typeof promiseView>) {
   return 'Open'
 }
 
+function PeopleList({
+  state,
+  dispatch,
+  scroll,
+}: {
+  state: HallState
+  dispatch: Dispatch<Action>
+  scroll?: boolean
+}) {
+  return (
+    <ul className={scroll ? 'roster' : 'people'} aria-label="People">
+      {visibleIds(state).map((id) => {
+        const person = state.sessions[id]
+        const current = id === state.activeId
+        return (
+          <li key={id}>
+            <button
+              type="button"
+              className={current ? 'person current' : 'person'}
+              aria-current={current ? 'true' : undefined}
+              onClick={() => dispatch({ type: 'select', id })}
+            >
+              <span className="person-name">{person.name}</span>
+              <span className="person-topic">
+                {person.org || person.topic}
+                {state.eventId === 'all' && person.conference ? ` · ${person.conference}` : ''}
+              </span>
+              {!scroll && <span className="person-status">{statusWord(person)}</span>}
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 export function Desk({
   state,
   dispatch,
@@ -247,6 +283,7 @@ export function Desk({
                 {event.name}
               </option>
             ))}
+            <option value="all">All events</option>
           </select>
         </label>
         <form
@@ -348,6 +385,8 @@ export function Desk({
         </button>
       </nav>
 
+      {!state.chatOpen && state.revealHall && <PeopleList state={state} dispatch={dispatch} scroll />}
+
       <main className="desk" data-chat={state.chatOpen ? 'true' : 'false'} data-actions={showActions ? 'true' : 'false'}>
         <button
           type="button"
@@ -404,28 +443,7 @@ export function Desk({
             {disconnected && <p className="reason">TrueForge disconnected. Reconnect to write a follow-up.</p>}
           </form>
 
-          {state.revealHall && (
-            <ul className="people">
-              {visibleIds(state).map((id) => {
-                const person = state.sessions[id]
-                const current = id === state.activeId
-                return (
-                  <li key={id}>
-                    <button
-                      type="button"
-                      className={current ? 'person current' : 'person'}
-                      aria-current={current ? 'true' : undefined}
-                      onClick={() => dispatch({ type: 'select', id })}
-                    >
-                      <span className="person-name">{person.name}</span>
-                      <span className="person-topic">{person.topic}</span>
-                      <span className="person-status">{statusWord(person)}</span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
+          {state.revealHall && <PeopleList state={state} dispatch={dispatch} />}
         </section>
 
         <article className="face" id="face" aria-busy={session.phase === 'processing'}>

@@ -1150,7 +1150,7 @@ h1 { max-width: 22ch; }
   padding: 0;
   display: grid;
   gap: 8px;
-  max-height: 220px;
+  max-height: min(46dvh, 480px);
   overflow: auto;
 }
 
@@ -1183,6 +1183,35 @@ h1 { max-width: 22ch; }
   gap: 8px;
   transform: translateY(-50%);
 }
+
+.roster {
+  position: fixed;
+  z-index: 14;
+  left: 16px;
+  right: 16px;
+  bottom: 72px;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0 0 4px;
+  list-style: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.roster li { flex: 0 0 auto; }
+
+.roster .person {
+  width: 168px;
+  min-height: 64px;
+  border-radius: 16px;
+  background: #1c1b19;
+  color: var(--paper);
+  box-shadow: 0 10px 28px rgba(20, 19, 17, 0.35);
+}
+
+.roster .person.current { background: var(--face); color: var(--ink); }
+.roster .person.current .person-topic { color: #5c564c; }
 
 .hall-nav button, .ask-people button {
   min-height: 44px;

@@ -153,9 +153,10 @@ export function footerLine(state: HallState) {
 
 export function visibleIds(state: HallState) {
   if (!state.revealHall) return [state.activeId]
-  const catalogIds = PEOPLE.filter((person) => person.eventId === state.eventId).map((person) => person.id)
+  const everyone = state.eventId === 'all'
+  const catalogIds = PEOPLE.filter((person) => everyone || person.eventId === state.eventId).map((person) => person.id)
   const added = Object.values(state.sessions)
-    .filter((item) => item.id !== 'new' && item.conferenceId === state.eventId && !catalogIds.includes(item.id))
+    .filter((item) => item.id !== 'new' && (everyone || item.conferenceId === state.eventId) && !catalogIds.includes(item.id))
     .map((item) => item.id)
   return ['new', ...catalogIds, ...added].filter((id) => state.sessions[id])
 }
@@ -572,10 +573,13 @@ export function reduce(state: HallState, action: Action): HallState {
         activeId: action.id,
         chatOpen: true,
         entered: true,
-        eventId: conferenceId || state.eventId,
+        eventId: state.eventId === 'all' ? 'all' : conferenceId || state.eventId,
       }
     }
     case 'set-event': {
+      if (action.id === 'all') {
+        return { ...state, eventId: 'all', entered: true, revealHall: true, chatOpen: false }
+      }
       const ids = PEOPLE.filter((person) => person.eventId === action.id).map((person) => person.id)
       const stay = state.activeId === 'new' || ids.includes(state.activeId)
       return {
@@ -587,7 +591,8 @@ export function reduce(state: HallState, action: Action): HallState {
       }
     }
     case 'add-person': {
-      const event = EVENTS.find((item) => item.id === state.eventId)
+      const eventKey = state.eventId === 'all' ? state.sessions[state.activeId]?.conferenceId || 'patch' : state.eventId
+      const event = EVENTS.find((item) => item.id === eventKey)
       const session = sessionFrom({
         id: action.id,
         name: action.name,
@@ -596,7 +601,7 @@ export function reduce(state: HallState, action: Action): HallState {
         topic: action.topic || 'A conversation',
         note: action.note,
         when: action.now,
-        conferenceId: state.eventId,
+        conferenceId: eventKey,
         conference: event?.name || '',
         venue: event?.venue || '',
         date: event?.date || '',
