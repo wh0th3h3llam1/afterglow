@@ -1,0 +1,33 @@
+{
+  "events": [
+    { "id": "patch", "name": "Patch the Conference", "date": "Oct 24, 2026", "venue": "San Francisco" },
+    { "id": "harbor", "name": "Harbor Night", "date": "Mar 12, 2026", "venue": "Seattle" },
+    { "id": "winter", "name": "Winter Forge", "date": "Jan 18, 2026", "venue": "Austin" }
+  ],
+  "people": [
+    { "id": "priya", "name": "Priya", "org": "Nimbus", "email": "priya@nimbus.example", "topic": "Agent memory", "when": "8:50 AM", "eventId": "patch", "note": "Met Priya from Nimbus after the agent talk. She offered an intro to their engineering lead. I promised the repo. priya@nimbus.example." },
+    { "id": "jonah", "name": "Jonah", "org": "Northline", "email": "jonah@northline.example", "topic": "Scheduling clashes", "when": "9:40 AM", "eventId": "patch", "note": "Met Jonah from Northline after the morning workshop. He asked for the scheduler notes. I promised to share my repo. Email jonah@northline.example." },
+    { "id": "mei", "name": "Mei", "org": "Harbor", "email": "mei@harbor.example", "topic": "Side events", "when": "10:15 AM", "eventId": "patch", "note": "Met Mei from Harbor. She offered to introduce me to their engineering lead. I promised to share my repo. mei@harbor.example." },
+    { "id": "luis", "name": "Luis", "org": "Kite", "email": "luis@kite.example", "topic": "Graph memory", "when": "11:05 AM", "eventId": "patch", "note": "Met Luis from Kite. We talked about agent memory. I promised to share my repo. luis@kite.example." },
+    { "id": "samira", "name": "Samira", "org": "Fieldnote", "email": "samira@fieldnote.example", "topic": "CFP deadlines", "when": "12:20 PM", "eventId": "patch", "note": "Met Samira from Fieldnote about an open CFP. I said I would send the draft later. samira@fieldnote.example." },
+    { "id": "andre", "name": "Andre", "org": "Lumen", "email": "andre@lumen.example", "topic": "Follow-ups", "when": "1:10 PM", "eventId": "patch", "note": "Met Andre from Lumen. I promised to share my repo. andre@lumen.example." },
+    { "id": "noor", "name": "Noor", "org": "Sable", "email": "noor@sable.example", "topic": "Trace storage", "when": "2:05 PM", "eventId": "patch", "note": "Met Noor from Sable after the memory talk. She asked how I store traces when agents only keep summaries. I said I would answer that. noor@sable.example." },
+    { "id": "imani", "name": "Imani", "org": "Quill", "email": "", "topic": "Deck feedback", "when": "2:40 PM", "eventId": "patch", "note": "Met Imani from Quill. She asked me to look at their deck. I still need her email before I can write." },
+    { "id": "priya-harbor", "name": "Priya", "org": "Keel", "email": "priya@keel.example", "topic": "Deck review", "when": "6:10 PM", "eventId": "harbor", "note": "Met Priya from Keel at Harbor Night. She asked me to review their deck. priya@keel.example." },
+    { "id": "rafa", "name": "Rafa", "org": "Brine", "email": "rafa@brine.example", "topic": "Shipping", "when": "6:40 PM", "eventId": "harbor", "note": "Met Rafa from Brine. We talked about shipping a small agent. rafa@brine.example." },
+    { "id": "hana", "name": "Hana", "org": "Northwind", "email": "hana@northwind.example", "topic": "On-call notes", "when": "7:05 PM", "eventId": "harbor", "note": "Met Hana from Northwind. She asked how I keep on-call notes. hana@northwind.example." },
+    { "id": "otto", "name": "Otto", "org": "Cedar", "email": "otto@cedar.example", "topic": "Traces", "when": "7:30 PM", "eventId": "harbor", "note": "Met Otto from Cedar. He asked for the trace notes. otto@cedar.example." },
+    { "id": "leah", "name": "Leah", "org": "Paper", "email": "leah@paper.example", "topic": "Field notes", "when": "8:00 PM", "eventId": "harbor", "note": "Met Leah from Paper. We compared field notes. leah@paper.example." },
+    { "id": "sid", "name": "Sid", "org": "Relay", "email": "sid@relay.example", "topic": "Handoffs", "when": "8:25 PM", "eventId": "harbor", "note": "Met Sid from Relay. He offered an intro to their on-call lead. sid@relay.example." },
+    { "id": "nia", "name": "Nia", "org": "Fold", "email": "nia@fold.example", "topic": "Memory", "when": "8:50 PM", "eventId": "harbor", "note": "Met Nia from Fold. We talked about memory for agents. nia@fold.example." },
+    { "id": "wes", "name": "Wes", "org": "Pier", "email": "wes@pier.example", "topic": "Venues", "when": "9:15 PM", "eventId": "harbor", "note": "Met Wes from Pier. He asked which venue worked for the demo. wes@pier.example." },
+    { "id": "mei-winter", "name": "Mei", "org": "Glass", "email": "mei@glass.example", "topic": "Demos", "when": "9:20 AM", "eventId": "winter", "note": "Met Mei from Glass at Winter Forge. She asked for the demo notes. mei@glass.example." },
+    { "id": "jonah-winter", "name": "Jonah", "org": "Redline", "email": "jonah@redline.example", "topic": "Schedules", "when": "10:00 AM", "eventId": "winter", "note": "Met Jonah from Redline. He asked how I avoid scheduling clashes. jonah@redline.example." },
+    { "id": "amira", "name": "Amira", "org": "Birch", "email": "amira@birch.example", "topic": "CFPs", "when": "10:40 AM", "eventId": "winter", "note": "Met Amira from Birch. She asked about the CFP draft. amira@birch.example." },
+    { "id": "theo", "name": "Theo", "org": "Kiln", "email": "theo@kiln.example", "topic": "Stamps", "when": "11:15 AM", "eventId": "winter", "note": "Met Theo from Kiln. We talked about proof stamps. theo@kiln.example." },
+    { "id": "yara", "name": "Yara", "org": "Dusk", "email": "yara@dusk.example", "topic": "Follow-ups", "when": "11:50 AM", "eventId": "winter", "note": "Met Yara from Dusk. I said I would send the follow-up later. yara@dusk.example." },
+    { "id": "cole", "name": "Cole", "org": "Inlet", "email": "cole@inlet.example", "topic": "Graphs", "when": "1:20 PM", "eventId": "winter", "note": "Met Cole from Inlet. We talked about graph memory. cole@inlet.example." },
+    { "id": "ruth", "name": "Ruth", "org": "Maple", "email": "ruth@maple.example", "topic": "Intros", "when": "2:00 PM", "eventId": "winter", "note": "Met Ruth from Maple. She offered an intro to their engineering lead. ruth@maple.example." },
+    { "id": "ken", "name": "Ken", "org": "Veld", "email": "ken@veld.example", "topic": "Budgets", "when": "2:40 PM", "eventId": "winter", "note": "Met Ken from Veld. He asked what the hackathon budget covered. ken@veld.example." }
+  ]
+}
