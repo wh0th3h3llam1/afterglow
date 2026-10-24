@@ -72,7 +72,7 @@ The runtime skill lives at [skills/followup-voice/SKILL.md](skills/followup-voic
 & "$nodeDir\node.exe" $npmCli run setup:skill
 ```
 
-Set `AFTERGLOW_SKILL_ENABLED=true` in `.env.local` and restart the web app. The inline prompt already carries the same safety and tone rules until the Git skill and Daytona environment are verified. A successful connector registration alone does not mean the runtime skill is attached.
+Set `AFTERGLOW_SKILL_ENABLED=true` in `.env.local` and restart the web app. The inline prompt also carries the safety and tone rules. In the local integration check, TrueForge accepted the pinned skill and Daytona environment in the agent session spec; actual sandbox creation was not observed. Git skills must omit `preload` with the pinned TrueForge version.
 
 ## Modes and safety
 
@@ -99,4 +99,4 @@ Each edit makes a new immutable version. Approval is tied to a pending TrueForge
 & "$nodeDir\node.exe" $npmCli run build
 ```
 
-The tests cover missing email, a mismatched identity, missing promised resource, denial, edits after approval, duplicate delivery, dry-run isolation, provider rejection and uncertain outcomes, and simulated TrueForge pause recovery. The live OpenAI/Resend path remains unverified until credentials and a consenting recipient are provided; [PROGRESS.md](PROGRESS.md) records the exact verified state and usage counts.
+The tests cover missing email, a mismatched identity, missing promised resource, denial, edits after approval, duplicate delivery, dry-run isolation, provider rejection and uncertain outcomes, and both TrueForge approval-state forms. A live OpenAI, MCP, approval, and DRY RUN outbox path has been verified. Resend delivery has not been tested while email is mocked; [PROGRESS.md](PROGRESS.md) records the exact verified state and usage counts.

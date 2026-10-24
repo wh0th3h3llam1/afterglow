@@ -16,7 +16,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const conversation = store.getConversation(draft.conversationId);
     if (!conversation || conversation.mode === "REPLAY") throw new Error("Replay cannot request delivery approval");
     if (conversation.mode === "LIVE") assertLiveDeliveryReady(store.getVersion(expectedVersionId)!.recipientEmail);
-    await continueConversation(draft.conversationId, `The user opened Review & send for draft ${id}, version ${expectedVersionId}. Read it with get_draft. If and only if this is still the current complete version, call send_email with draftVersionId ${expectedVersionId}; TrueForge must pause before execution for the user's final decision. Do not change the content or ask to bypass approval.`);
+    await continueConversation(draft.conversationId, `REVIEW PHASE. The user clicked Request final approval for draft ${id}, version ${expectedVersionId}. Call get_draft for ${id}; if currentVersionId is ${expectedVersionId}, your next action must be send_email({draftVersionId:"${expectedVersionId}"}). The configured TrueForge gate will pause that tool call for the user's final decision, so invoking it cannot deliver yet. Do not save another draft, stop after get_draft, or ask for confirmation in text. If the version differs, explain the mismatch instead.`);
     return Response.json({ ok: true });
   } catch (error) { return apiError(error); }
 }

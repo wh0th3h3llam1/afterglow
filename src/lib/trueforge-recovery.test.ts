@@ -26,7 +26,7 @@ describe("TrueForge turn recovery", () => {
   });
   afterEach(() => opened.sqlite.close());
 
-  it("restores a paused exact-version approval once after a process restart", async () => {
+  it.each(["paused", "done"] as const)("restores a %s exact-version approval once after a process restart", async (turnStatus) => {
     const conversation = store.capture("Met Mira and promised to follow up.", "DRY_RUN");
     const contact = store.saveContact({ conversationId: conversation.id, name: "Mira", email: "mira@example.com" });
     const { version } = store.createDraft({ conversationId: conversation.id, contactId: contact.id, recipientName: "Mira", recipientEmail: "mira@example.com", subject: "Following up", body: "Good meeting you, Mira.", resourceLinks: [] });
@@ -36,7 +36,10 @@ describe("TrueForge turn recovery", () => {
     const pause = { id: "pause-1", type: "tool.approval_required", threadId: "main", createdAt, toolCalls: [{ id: "call-1", sourceEventId: "source-1" }] };
     const items = [{ event: pause, turnId: "turn-1" }, { event: source, turnId: "turn-1" }];
     mocks.listEvents.mockImplementation(async () => ({ data: items, async *[Symbol.asyncIterator]() { yield* items; } }));
-    mocks.getTurn.mockResolvedValue({ data: { id: "turn-1", sessionId: "session-1", state: { status: "paused", actionRequiredOnEvents: [{ id: "pause-1" }] } } });
+    const state = turnStatus === "paused"
+      ? { status: "paused", actionRequiredOnEvents: [{ id: "pause-1" }] }
+      : { status: "done", output: null, requiredActions: [pause] };
+    mocks.getTurn.mockResolvedValue({ data: { id: "turn-1", sessionId: "session-1", state } });
 
     await recoverConversation(conversation.id);
     expect(store.getConversation(conversation.id)?.status).toBe("awaiting_approval");

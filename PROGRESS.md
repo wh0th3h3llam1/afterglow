@@ -4,45 +4,38 @@ Updated: 2026-10-24 (America/Los_Angeles)
 
 ## Current phase
 
-Public source published; credential-gated integration remains.
+Credential-backed local integration verified through TrueForge approval and DRY RUN delivery. The production server is running at `http://127.0.0.1:3000`; public-source update is in progress. LIVE Resend delivery is outside the current mock-email scope.
 
-## Completed and verified
+## Completed work and evidence
 
-- Confirmed the chosen `Build` workspace was empty and contained no existing repository or project instructions.
-- Confirmed the bundled Node.js runtime is `v24.22.1`, which meets TrueForge's documented Node.js 22.14+ requirement. The machine-wide Node.js is `v20.20.0`; commands for this project must use the bundled runtime until a newer machine-wide version is installed.
-- Reviewed TrueForge's official session, streaming, approval, MCP, skill, and sandbox documentation. No live runtime call has been made.
-- Pinned and installed the TypeScript runtime, SDK, Next.js, SQLite, Drizzle, MCP, Resend, and test dependencies. Generated and applied two Drizzle migrations to the ignored local SQLite database.
-- Built durable Conversation, Contact, Promise, Draft, immutable DraftVersion, Approval, Delivery, and RunEvent tables and store methods. Focused tests cover recovery, approval and delivery guards, recipient edits, and an actual ignored dry-run outbox file.
-- Started the local TrueForge 0.180.0 runtime and Afterglow MCP server. `scripts/register-connector.ts` registered `afterglow` and discovered all nine tools through TrueForge, including `send_email` and clarification resource updates.
-- Created an ignored `.env.local` with a random MCP bearer token in REPLAY mode. TrueForge's model catalog currently returns `[]` because no provider credentials are configured.
-- Added validated server routes for capture, clarification, immutable edits, redrafting, review requests, approval decisions, state restoration, and run events. The TrueForge adapter uses the installed SDK's typed session, streamed event, and `user.tool_approval` contracts; the model/approval path is not yet live-verified.
-- Built the Dusk Desk interface with a replay fixture, source-note reveal, inline tweak form, exact review dialog, promise ledger, and activity list. Browser checks showed the fixture, source reveal, exact review, editable version 2, and refresh restoration; screenshots at 360px, 768px, and desktop showed no horizontal clipping. Escape closes the review dialog.
-- Reopened the exact review in the browser after the recovery changes: focus began on Close review, Tab remained inside the dialog, and Escape closed it. Representative text and control color pairs measured 4.54:1 or higher (paper/ink 13.87:1; ember button/dark text 5.88:1).
-- Added recovery and replay isolation tests, a local JSON outbox for DRY RUN, and a stale-send reconciliation state. A full Next.js process restart restored the selected replay letter and immutable version 2 from SQLite. Production-only `npm audit --omit=dev` reported zero advisories; the all-dependency audit reports ten development-dependency advisories (five moderate, five high) in the pinned build tooling.
-- `npm test` passed 21 tests, `npm run typecheck` passed, and `npm run build` produced all routes on 2026-10-24. This includes recipient edits, post-approval edits, definite provider rejection, uncertain outcomes, and the real local outbox file. The model configuration script preserves other configured OpenAI models; it awaits a key for runtime verification.
-- Added a read-only TrueForge session sync for a processing conversation after a web restart. It reads the latest turn and events, restores a paused exact-version approval or final clarification, and skips previously stored events. A mocked SDK recovery test proved one pending approval and two unique run events after repeated sync. Active live-turn restart behavior remains unverified without an OpenAI key.
-- Audited the staged file list and tracked content for environment secrets, databases, raw notes, and outbox files; only placeholders and fictional fixtures are tracked. Git Credential Manager authenticated the signed-in GitHub account `wh0th3h3llam1` without exposing its token.
-- Created the public [Afterglow repository](https://github.com/wh0th3h3llam1/afterglow) and pushed initial commit `d0e24a735e17e8aba741c4cede611e131111e96d`. `git ls-remote origin refs/heads/main` returned that same commit.
-- Pinned that public commit in ignored `.env.local` and ran `npm run setup:skill`; TrueForge listed the registered `followup-voice` skill. Attachment in an agent session still awaits the Daytona sandbox key.
+- Built the local Next.js, TypeScript, Tailwind, SQLite/Drizzle app and separate MCP server with nine registered tools. The bundled Node.js runtime is v24.22.1; TrueForge runtime and SDK are pinned to 0.180.0. The machine-wide Node.js 20.20.0 remains too old for TrueForge.
+- Persisted conversations, contacts, promises, drafts, immutable draft versions, approvals, deliveries, run events, and TrueForge session/turn references. Drizzle migrations applied to ignored SQLite data. A web-process restart previously restored a replay draft; the credential-backed DRY RUN conversation and receipt also survived a browser refresh.
+- Built the Dusk Desk note capture, clarification, source reveal, edit/redraft, exact-version review, activity, and promise ledger. Browser checks covered 360px, 768px, and desktop without horizontal clipping, modal keyboard focus/Escape, representative contrast ratios of at least 4.54:1, and reduced-motion behavior. The selected conversation now restores its notes and mode after refresh.
+- Published audited source at [wh0th3h3llam1/afterglow](https://github.com/wh0th3h3llam1/afterglow). `.env.local`, SQLite, raw notes, and outbox data remain ignored. Git Credential Manager used the signed-in GitHub account; no repository secret was published.
+- Registered `followup-voice` from public commit `d0e24a735e17e8aba741c4cede611e131111e96d`, configured the Daytona environment, and verified a live TrueForge session spec includes the pinned skill, Daytona sandbox setting, and `openai/gpt-5-4-mini`. Actual sandbox creation has not been observed in run events.
+- Configured the OpenAI catalog model. A live DRY RUN capture called the Afterglow MCP tools, saved a fictional contact, promise, and draft with its promised URL. A fresh review turn called `get_draft`, then the gated `send_email`; TrueForge emitted `tool.approval_required` for the exact immutable version.
+- Approved that fictional DRY RUN through the app's TrueForge `user.tool_approval` path. Browser displayed **Dry run saved** with a local outbox receipt, and SQLite confirmed `approval=allowed`, `delivery=dry_run`, the receipt file exists, and the promise remains open. No Resend call or real email occurred. Browser refresh restored the DRY RUN letter, receipt, mode, and notes.
+- The installed SDK's streaming `model.message` omits the full call payload; authoritative `sessions.listEvents` supplies it. Turn state for the verified approval is `done` with `requiredActions`, not `paused`. The adapter now reconciles event history and accepts both SDK state forms while still verifying the pending event and exact tool-call/version references. A unit test covers each form.
+- `npm run typecheck` and `npm test` passed after the approval-state fix: 22 tests across four files. `npm run build` compiled the final production bundle and routes. After a web-process restart, browser reload restored the completed DRY RUN letter, receipt, mode, and notes; port 3000 returned HTTP 200, MCP health on port 3401 returned 200, and TrueForge on `localhost:8790` returned 200. Production-only `npm audit --omit=dev` returned zero advisories; the full dependency audit reported ten development-tooling advisories (five moderate, five high).
 
-## Next work
+## Next tasks
 
-1. Configure Daytona and attach the registered runtime skill in an agent session once its key is supplied.
-2. Verify a live OpenAI session, MCP call, TrueForge approval pause and resume, and Resend delivery when credentials and a consenting recipient are supplied.
-3. Check live refresh and process-restart behavior while a TrueForge turn is active, and use the bundled approval UI for the demo if custom approval proves unreliable.
+1. Push the verified code and updated records to the public repository after a tracked-file/secret audit.
+2. If LIVE delivery is later requested, configure Resend sender, key, and consenting-recipient allowlist, then test a single real delivery and provider reconciliation within the five-email cap.
 
-## Blockers and limits
+## Blockers and known limits
 
-- OpenAI, Resend, Daytona, and consenting test-recipient credentials are not present in the process environment. A live model turn, approval pause, Git-backed skill registration, and real delivery remain unverified until configured.
-- TrueForge blocks loopback MCP URLs by default. Local startup must set `OUTBOUND_URL_ALLOWED_HOSTS='["127.0.0.1","localhost"]'`; this was verified by successful tool discovery after restart.
-- The public Git source is available and `followup-voice` is registered with TrueForge; `AFTERGLOW_SKILL_ENABLED` remains false until Daytona setup and attachment succeed.
-- The live turn, real provider behavior, review resume, active-turn restart, and runtime skill attachment cannot be certified with mocks or replay. The current verified browser demo path is REPLAY, and DRY RUN has unit-level outbox evidence only.
+- The user requested mock email for now. Resend credentials, verified sender, and consenting recipients are absent, so LIVE delivery is intentionally unverified and unavailable.
+- The local TrueForge runtime did not require the supplied remote TrueForge access token; it was neither saved nor used.
+- TrueForge accepts the Git skill in the live agent spec with Daytona enabled, but no sandbox creation event has been observed. Skill execution itself is not yet certified.
+- A live process restart during an active approval pause has not been exercised. Unit tests cover recovery, and browser refresh verified the completed live DRY RUN state.
+- TrueForge loopback MCP discovery requires `OUTBOUND_URL_ALLOWED_HOSTS='["127.0.0.1","localhost"]'` on the local runtime process.
 
 ## Usage budget
 
 | Meter | Used | Limit |
 | --- | ---: | ---: |
-| Live OpenAI agent turns | 0 | 30 |
+| Live OpenAI agent turns | 6 | 30 |
 | Real test emails | 0 | 5 |
 
-Completion entries should include the check or browser observation that proved the work. Keep failures, remaining tasks, and mode-specific limitations visible.
+The first skill-enabled session attempt failed before a model turn because Git skills reject `preload: true`. Two early review turns fetched the draft but did not request approval; a fresh session with revised review instructions reached the approval gate. An initial resume click was rejected locally because the adapter expected only `paused`; it created no delivery. The corrected resume produced one outbox receipt.

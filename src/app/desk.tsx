@@ -67,6 +67,11 @@ export default function Desk({ sampleNotes }: { sampleNotes: string }) {
 
   useEffect(() => { void refresh(selectedId).catch((e) => setError(e.message)); }, [refresh, selectedId]);
   useEffect(() => {
+    if (!view || view.conversation.id !== selectedId) return;
+    setMode(view.conversation.mode);
+    setNotes(view.conversation.rawNotes);
+  }, [selectedId, view?.conversation.id]);
+  useEffect(() => {
     if (!selectedId || !["processing", "sending", "awaiting_approval"].includes(view?.conversation.status ?? "")) return;
     const timer = window.setInterval(() => { void refresh(selectedId).catch(() => {}); }, 2500);
     return () => window.clearInterval(timer);
@@ -112,7 +117,7 @@ export default function Desk({ sampleNotes }: { sampleNotes: string }) {
           const data = await jsonRequest<{ id: string }>("/api/conversations", { method: "POST", body: JSON.stringify({ notes, mode }) });
           setSelectedId(data.id); setDraftIndex(0); setEditing(false); setReviewOpen(false);
         })}>{busy ? "Working…" : mode === "REPLAY" ? "Load the sample" : "Turn into a follow-up"}<span aria-hidden="true">↗</span></button>
-        {conversations.length > 0 && <div className="recent-list"><h3>On the desk</h3>{conversations.slice(0, 5).map((item) => <button key={item.id} className={`recent-item ${selectedId === item.id ? "selected" : ""}`} onClick={() => { setSelectedId(item.id); setDraftIndex(0); setEditing(false); setReviewOpen(false); }}><span className="recent-dot" /> <span>{new Date(item.createdAt).toLocaleDateString()} <small>{statusLabel(item.status)}</small></span><span aria-hidden="true">→</span></button>)}</div>}
+        {conversations.length > 0 && <div className="recent-list"><h3>On the desk</h3>{conversations.slice(0, 5).map((item) => <button key={item.id} className={`recent-item ${selectedId === item.id ? "selected" : ""}`} onClick={() => { setSelectedId(item.id); setDraftIndex(0); setEditing(false); setReviewOpen(false); }}><span className="recent-dot" /> <span>{item.createdAt.slice(0, 10)} <small>{statusLabel(item.status)}</small></span><span aria-hidden="true">→</span></button>)}</div>}
       </section>
 
       <section className="letters-panel" aria-labelledby="letters-title">

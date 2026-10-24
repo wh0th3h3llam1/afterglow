@@ -151,3 +151,45 @@ Record consequential choices here as dated entries. An entry remains in place if
 **Consequences:** A restart can recover a completed or paused turn without an automatic send. The SDK snapshot path is tested with a simulated paused turn; its live behavior still needs a credential-backed run. Unsupported pauses are shown as a failure with a pointer to TrueForge's local approval UI.
 
 **Source:** Installed TrueForge SDK `sessions.listEvents` and `sessions.getTurn` types; `src/lib/trueforge-recovery.test.ts` repeated-sync and clarification cases.
+
+## 2026-10-24 — Credential-backed local mode and skill attachment
+
+**Status:** Accepted; supersedes the credential-pending parts of “Runtime skill and build-time skills,” “Catalog model name,” and “Public source and credential boundary” above.
+
+**Choice:** Configure the supplied OpenAI key and Daytona key only in ignored `.env.local`, select DRY RUN for the live integration check, and leave Resend unconfigured while email is mocked. Configure TrueForge's `openai/gpt-5-4-mini` catalog entry and Daytona's `afterglow-daytona` environment. Attach the pinned Git skill as `skills: [{ name: "followup-voice" }]` without preload. Do not store the supplied remote TrueForge access token for the localhost runtime.
+
+**Why:** The user requested mock email. TrueForge accepted local SDK calls without the remote token. A skill-enabled session returned HTTP 422 with `preload: true`; a fresh session succeeded without it and its agent spec showed both the skill and sandbox configuration.
+
+**Alternatives:** Configure LIVE Resend now, omit the Git skill, or keep attempting skill preload. LIVE conflicts with the current request; omitting the skill misses the brief; preload is rejected by this TrueForge version.
+
+**Consequences:** The agent can draft and enter the approval gate with real model/MCP calls while delivery remains local. A skill appearing in the session spec does not prove sandbox execution; no sandbox creation event has been observed. No real email was sent.
+
+**Source:** TrueForge 0.180.0 session-create 422 response, the succeeding live `sessions.get` agent spec, `npm run setup:model`, `npm run setup:sandbox`, and [TrueForge Git skill guidance](https://github.com/truefoundry/trueforge/blob/main/docs/skills.mdx).
+
+## 2026-10-24 — Authoritative approval state and exact-version resume
+
+**Status:** Accepted and live DRY RUN verified; supersedes the unverified approval and recovery assumptions above.
+
+**Choice:** After each streamed turn, reconcile `sessions.listEvents` with `sessions.getTurn` before deriving the desk state. Treat a pending `tool.approval_required` as actionable when TrueForge reports either a `paused` turn with `actionRequiredOnEvents` or a `done` turn with the matching `requiredActions` event. Before resuming, verify the approval event, tool-call ID, source event, immutable version argument, and current draft version. Resume only through `user.tool_approval`.
+
+**Why:** This SDK's streaming model event contains IDs and metadata but omits the complete tool-call payload. In the observed live review turn, TrueForge returned `status: done`, `output: null`, and a `requiredActions` approval event. The earlier paused-only guard rejected the first approval click locally. Reconciliation and the corrected guard allowed the same pending call to complete once into the local outbox.
+
+**Alternatives:** Trust partial stream events, bypass TrueForge with a direct app send route, or accept any done turn as approved. Each would lose exact-call evidence or weaken the explicit gate.
+
+**Consequences:** Browser refresh and delayed state reads can restore the pending reference from TrueForge history. The local delivery intent remains unique to the immutable version. An unsupported or stale approval still fails closed. The completed DRY RUN retained an open promise and never displayed SENT.
+
+**Source:** Installed SDK `TurnStateDone.requiredActions` and `TurnStatePaused.actionRequiredOnEvents` types; live `sessions.getTurn`/`sessions.listEvents` for the fictional review; browser approval and local outbox receipt; `src/lib/trueforge-recovery.test.ts` covering both turn-state forms.
+
+## 2026-10-24 — Stable restored desk context
+
+**Status:** Accepted and browser verified.
+
+**Choice:** When a saved conversation is selected after refresh, restore its capture mode and notes into the visible form. Render the recent-list date from the stored ISO date to keep server and browser markup stable.
+
+**Why:** A live DRY RUN receipt restored after refresh, but the capture form initially showed REPLAY and the sample notes while the header correctly showed the selected conversation's DRY_RUN mode. Browser locale formatting also risked a hydration mismatch.
+
+**Alternatives:** Leave the mixed modes visible or persist an additional browser-only form copy. The first is confusing; the second adds state without improving durable recovery.
+
+**Consequences:** The selected conversation's mode and notes agree across the desk after hydration. Changing the form still selects the mode for a new capture; the header continues to describe the selected saved conversation.
+
+**Source:** Browser refresh of the completed DRY RUN conversation and `src/app/desk.tsx`.
