@@ -1,0 +1,1 @@
+ALTER TABLE `promises` ADD `requires_resource` integer DEFAULT false NOT NULL;

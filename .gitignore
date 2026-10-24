@@ -1,0 +1,14 @@
+node_modules/
+.next/
+coverage/
+.env
+.env.*
+!.env.example
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.taste-skill/
+playwright-report/
+test-results/
+*.tsbuildinfo
