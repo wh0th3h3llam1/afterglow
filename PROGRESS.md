@@ -4,7 +4,7 @@ Updated: 2026-10-24 (America/Los_Angeles)
 
 ## Current phase
 
-Credential-backed local integration verified through TrueForge approval and DRY RUN delivery. The production server is running at `http://127.0.0.1:3000`; public-source update is in progress. LIVE Resend delivery is outside the current mock-email scope.
+Credential-backed local integration verified through TrueForge approval and DRY RUN delivery. The production server is running at `http://127.0.0.1:3000`, and the verified source is published. LIVE Resend delivery is outside the current mock-email scope.
 
 ## Completed work and evidence
 
@@ -17,11 +17,11 @@ Credential-backed local integration verified through TrueForge approval and DRY 
 - Approved that fictional DRY RUN through the app's TrueForge `user.tool_approval` path. Browser displayed **Dry run saved** with a local outbox receipt, and SQLite confirmed `approval=allowed`, `delivery=dry_run`, the receipt file exists, and the promise remains open. No Resend call or real email occurred. Browser refresh restored the DRY RUN letter, receipt, mode, and notes.
 - The installed SDK's streaming `model.message` omits the full call payload; authoritative `sessions.listEvents` supplies it. Turn state for the verified approval is `done` with `requiredActions`, not `paused`. The adapter now reconciles event history and accepts both SDK state forms while still verifying the pending event and exact tool-call/version references. A unit test covers each form.
 - `npm run typecheck` and `npm test` passed after the approval-state fix: 22 tests across four files. `npm run build` compiled the final production bundle and routes. After a web-process restart, browser reload restored the completed DRY RUN letter, receipt, mode, and notes; port 3000 returned HTTP 200, MCP health on port 3401 returned 200, and TrueForge on `localhost:8790` returned 200. Production-only `npm audit --omit=dev` returned zero advisories; the full dependency audit reported ten development-tooling advisories (five moderate, five high).
+- Audited the seven changed tracked files and staged file list; no credential patterns were present, and `.env.local`, SQLite, outbox, and screenshot paths were ignored. Pushed approval/recovery fixes and records as commit `79844f5` to public `main`.
 
 ## Next tasks
 
-1. Push the verified code and updated records to the public repository after a tracked-file/secret audit.
-2. If LIVE delivery is later requested, configure Resend sender, key, and consenting-recipient allowlist, then test a single real delivery and provider reconciliation within the five-email cap.
+1. If LIVE delivery is later requested, configure Resend sender, key, and consenting-recipient allowlist, then test a single real delivery and provider reconciliation within the five-email cap.
 
 ## Blockers and known limits
 
