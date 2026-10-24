@@ -1,6 +1,6 @@
 # Afterglow
 
-Afterglow is a local correspondence desk for conference follow-ups. It turns notes into personal drafts through TrueForge and an Afterglow MCP server, asks for missing details, and requires an explicit TrueForge tool approval before delivery. [Current progress](PROGRESS.md) and [dated decisions](DECISIONS.md) are kept separately so the state of the build is easy to resume.
+Afterglow is a local correspondence desk for conference follow-ups. It turns notes into personal drafts through TrueForge and an Afterglow MCP server, asks for missing details, and requires an explicit TrueForge tool approval before delivery. The [public source](https://github.com/wh0th3h3llam1/afterglow), [current progress](PROGRESS.md), and [dated decisions](DECISIONS.md) are kept separately so the state of the build is easy to resume.
 
 ## Requirements
 

@@ -123,3 +123,17 @@ Record consequential choices here as dated entries. An entry remains in place if
 **Consequences:** Replay and dry-run state survives the web process. A genuinely slow provider response can conservatively appear uncertain and needs manual reconciliation. Agent pause restoration and live provider outcomes still need credential-backed verification.
 
 **Source:** `src/lib/recovery.test.ts`, `src/lib/delivery.test.ts`, browser restart check, installed TrueForge SDK `settings.modelProviders` contract.
+
+## 2026-10-24 — Public source and credential boundary
+
+**Status:** Published and locally registered; runtime attachment pending credentials
+
+**Context:** TrueForge loads skills from Git at a pinned commit. The user chose their signed-in GitHub account for the public Afterglow source, while provider credentials and personal notes must remain local.
+
+**Decision:** Publish the audited source as [wh0th3h3llam1/afterglow](https://github.com/wh0th3h3llam1/afterglow). Keep `.env.local`, SQLite, raw notes, and outbox under ignored paths. Register `followup-voice` from pinned commit `d0e24a735e17e8aba741c4cede611e131111e96d`; attach it only when the Daytona sandbox is configured.
+
+**Alternatives:** Keep the skill only in an inline prompt, or publish sample notes and secrets with the code. The inline prompt remains a documented temporary fallback; personal data does not belong in public Git.
+
+**Consequences:** The code can be cloned and reviewed now. TrueForge listed the registered skill locally, but its attachment in a live agent session remains unverified.
+
+**Source:** Public repository creation response, `git ls-remote origin refs/heads/main` matching commit `d0e24a735e17e8aba741c4cede611e131111e96d`, `npm run setup:skill` success, staged file audit, [TrueForge skills](https://github.com/truefoundry/trueforge/blob/main/docs/skills.mdx).

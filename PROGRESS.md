@@ -4,7 +4,7 @@ Updated: 2026-10-24 (America/Los_Angeles)
 
 ## Current phase
 
-Local implementation verified; public-repository publication and credential-gated integration remain.
+Public source published; credential-gated integration remains.
 
 ## Completed and verified
 
@@ -20,18 +20,20 @@ Local implementation verified; public-repository publication and credential-gate
 - Added recovery and replay isolation tests, a local JSON outbox for DRY RUN, and a stale-send reconciliation state. A full Next.js process restart restored the selected replay letter and immutable version 2 from SQLite. Production-only `npm audit --omit=dev` reported zero advisories; the all-dependency audit reports ten development-dependency advisories (five moderate, five high) in the pinned build tooling.
 - `npm test` passed 17 tests, `npm run typecheck` passed, and `npm run build` produced all routes on 2026-10-24. This was after the final recipient edit and outbox changes. The model configuration script now preserves any other configured OpenAI models; it awaits a key for runtime verification.
 - Audited the staged file list and tracked content for environment secrets, databases, raw notes, and outbox files; only placeholders and fictional fixtures are tracked. Git Credential Manager authenticated the signed-in GitHub account `wh0th3h3llam1` without exposing its token.
+- Created the public [Afterglow repository](https://github.com/wh0th3h3llam1/afterglow) and pushed initial commit `d0e24a735e17e8aba741c4cede611e131111e96d`. `git ls-remote origin refs/heads/main` returned that same commit.
+- Pinned that public commit in ignored `.env.local` and ran `npm run setup:skill`; TrueForge listed the registered `followup-voice` skill. Attachment in an agent session still awaits the Daytona sandbox key.
 
 ## Next work
 
-1. Publish the sanitized code to a public GitHub repository and record its commit and URL here.
-2. Register the pinned runtime skill with the public Git URL once a Daytona key is supplied.
-3. Verify a live OpenAI session, MCP call, TrueForge approval pause and resume, and Resend delivery when credentials and a consenting recipient are supplied.
+1. Configure Daytona and attach the registered runtime skill in an agent session once its key is supplied.
+2. Verify a live OpenAI session, MCP call, TrueForge approval pause and resume, and Resend delivery when credentials and a consenting recipient are supplied.
+3. Check live refresh and process-restart behavior while a TrueForge turn is active, and use the bundled approval UI for the demo if custom approval proves unreliable.
 
 ## Blockers and limits
 
 - OpenAI, Resend, Daytona, and consenting test-recipient credentials are not present in the process environment. A live model turn, approval pause, Git-backed skill registration, and real delivery remain unverified until configured.
 - TrueForge blocks loopback MCP URLs by default. Local startup must set `OUTBOUND_URL_ALLOWED_HOSTS='["127.0.0.1","localhost"]'`; this was verified by successful tool discovery after restart.
-- No GitHub remote exists yet. GitHub CLI is absent, but the signed-in account is available through Git Credential Manager and its API credential.
+- The public Git source is available and `followup-voice` is registered with TrueForge; `AFTERGLOW_SKILL_ENABLED` remains false until Daytona setup and attachment succeed.
 - The live turn, provider failure behavior, review resume, and runtime skill attachment cannot be certified with mocks or replay. The current verified demo path is REPLAY, and DRY RUN has unit-level outbox evidence only.
 
 ## Usage budget
