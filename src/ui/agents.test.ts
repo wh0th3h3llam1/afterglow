@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { initialState } from '../hall/machine'
-import { classifyVoice, daySummary, matchPeople } from './agents'
+import { classifyVoice, daySummary, matchPeople, parseMeet } from './agents'
 
 describe('voice routing', () => {
   const sessions = Object.values(initialState().sessions)
@@ -24,5 +24,13 @@ describe('voice routing', () => {
     expect(summary).toContain('Mara at Loomline')
     expect(summary).not.toContain('Tess')
     expect(daySummary([], 'patch')).toBe('No meetings are on this conference yet.')
+  })
+
+  it('reads a name and company out of a meeting note', () => {
+    expect(parseMeet('I met Ada from Loom. ada@loom.example')).toMatchObject({
+      name: 'Ada',
+      org: 'Loom',
+      email: 'ada@loom.example',
+    })
   })
 })

@@ -160,6 +160,24 @@ describe('afterglow hall', () => {
     expect(visibleIds(next)).not.toContain('priya')
   })
 
+  it('adds a new meeting to the current hall', () => {
+    const state = reduce(initialState(), {
+      type: 'add-person',
+      id: 'met-ada',
+      name: 'Ada',
+      org: 'Loom',
+      email: 'ada@loom.example',
+      topic: 'Badges',
+      note: 'Met Ada from Loom.',
+      subject: 'Following up with Ada',
+      body: 'Hey Ada,\n\nMet Ada from Loom.\n\nAarsh',
+      now: '4:40 PM',
+    })
+    expect(state.activeId).toBe('met-ada')
+    expect(state.sessions['met-ada'].conferenceId).toBe('patch')
+    expect(visibleIds(state)).toContain('met-ada')
+  })
+
   it('restores a review link', () => {
     const state = applyParams(initialState(), new URLSearchParams('phase=review&panel=source'))
     expect(state.sessions.new.phase).toBe('review')

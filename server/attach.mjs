@@ -1,7 +1,7 @@
 import { askGraph, closeRepoIfLinked, explainFollowup, openOwes, rememberMeeting, wholeGraph } from './graph.mjs'
 import { loadEnv } from './env.mjs'
 import { readOutbox } from './outbox.mjs'
-import { approveSend, denySend, followup, forgeStatus, phraseFacts } from './forge.mjs'
+import { approveSend, denySend, followup, forgeStatus, phraseFacts, transcribeAudio } from './forge.mjs'
 import { qodoStatus } from './qodo.mjs'
 
 loadEnv()
@@ -11,6 +11,12 @@ function send(res, status, body) {
   res.statusCode = status
   res.setHeader('content-type', 'application/json; charset=utf-8')
   res.end(payload)
+}
+
+async function readRaw(req) {
+  const chunks = []
+  for await (const chunk of req) chunks.push(chunk)
+  return Buffer.concat(chunks)
 }
 
 async function readBody(req) {
@@ -44,6 +50,12 @@ export function attach(middlewares) {
       }
       if (req.method === 'GET' && url.pathname === '/api/outbox') {
         return send(res, 200, { records: readOutbox() })
+      }
+      if (req.method === 'POST' && url.pathname === '/api/transcribe') {
+        const audio = await readRaw(req)
+        const mime = String(req.headers['content-type'] || 'audio/webm')
+        const text = await transcribeAudio(audio, mime)
+        return send(res, 200, { text })
       }
       if (req.method === 'POST' && url.pathname === '/api/ask') {
         const body = await readBody(req)

@@ -108,6 +108,7 @@ export type Action =
   | { type: 'check-uncertain' }
   | { type: 'select'; id: string; toggle?: boolean }
   | { type: 'set-event'; id: string }
+  | { type: 'add-person'; id: string; name: string; org: string; email: string; topic: string; note: string; subject: string; body: string; now: string }
   | { type: 'toggle-chat' }
   | { type: 'step'; dir: -1 | 1 }
   | { type: 'set-mode'; mode: Mode }

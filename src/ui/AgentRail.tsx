@@ -2,9 +2,9 @@ import { AGENTS, useAgents } from './agents'
 
 function word(status?: 'running' | 'done' | 'failed') {
   if (status === 'running') return 'Running'
+  if (status === 'failed') return 'Failed'
   if (status === 'done') return 'Finished'
-  if (status === 'failed') return 'Stopped'
-  return 'Idle'
+  return 'Not active'
 }
 
 export function AgentRail() {
