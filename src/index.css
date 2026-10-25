@@ -427,9 +427,92 @@ button, a, input, textarea { -webkit-tap-highlight-color: transparent; }
 }
 
 .landing {
+  position: relative;
   min-height: 100dvh;
   background: var(--air);
   color: var(--paper);
+}
+
+.landing-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.landing-light {
+  position: absolute;
+  top: 0;
+  left: 22%;
+  width: 78%;
+  height: 78%;
+  background: linear-gradient(to bottom, rgba(230, 225, 216, 0.24), rgba(230, 225, 216, 0.05) 62%, transparent);
+  clip-path: polygon(28% 0, 62% 0, 100% 100%, 0 100%);
+}
+
+.landing-floor {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: -6%;
+  height: 48%;
+  background-image:
+    linear-gradient(rgba(230, 225, 216, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(230, 225, 216, 0.14) 1px, transparent 1px);
+  background-size: 84px 84px;
+  transform: perspective(480px) rotateX(64deg);
+  transform-origin: center top;
+  mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 72%, transparent);
+}
+
+.landing-stage {
+  position: absolute;
+  top: 12vh;
+  right: 4vw;
+  display: flex;
+  align-items: flex-end;
+  gap: 22px;
+}
+
+.landing-badge {
+  width: 168px;
+  height: 224px;
+  padding: 16px 14px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  border-radius: 16px;
+  background: #e6e1d8;
+  color: #1a1916;
+  box-shadow:
+    0 0 0 10px #3a3833,
+    0 28px 40px rgba(20, 19, 17, 0.45);
+}
+
+.landing-badge span {
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.landing-badge small {
+  color: #5c564c;
+  font-size: 0.85rem;
+}
+
+.landing-badge:nth-child(1) { transform: rotate(-7deg) translateY(12px); }
+.landing-badge:nth-child(2) { transform: rotate(4deg) translateY(-18px); opacity: 0.92; }
+.landing-badge:nth-child(3) { transform: rotate(-2deg) translateY(28px); opacity: 0.78; }
+.landing-badge:nth-child(4) { transform: rotate(6deg) translateY(6px); opacity: 0.82; }
+
+.landing-bar,
+.landing-hero,
+.landing-use,
+.landing-halls {
+  position: relative;
+  z-index: 1;
 }
 
 .landing-bar {
@@ -494,8 +577,11 @@ button, a, input, textarea { -webkit-tap-highlight-color: transparent; }
 
 .landing-use,
 .landing-halls {
+  position: relative;
+  z-index: 1;
   max-width: 720px;
   padding: 8px 24px 72px;
+  background: var(--air);
 }
 
 .landing-use h2,
@@ -1371,6 +1457,9 @@ h1 { max-width: 22ch; }
     width: auto;
     max-height: 40dvh;
   }
+@media (max-width: 1199px) {
+  .landing-stage { display: none; }
+}
   .dock {
     top: 252px;
     left: 12px;
