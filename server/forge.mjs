@@ -135,6 +135,34 @@ function messageText(events) {
     .trim()
 }
 
+export async function transcribeAudio(buffer, mime) {
+  const base = (process.env.TRUEFORGE_GATEWAY_URL || '').replace(/\/$/, '')
+  const token = process.env.TRUEFORGE_ACCESS_TOKEN
+  const model = process.env.TRUEFORGE_TRANSCRIBE_MODEL || 'openai/whisper-1'
+  if (!base || !token) throw new Error('Transcription is not configured.')
+  if (!buffer?.length) throw new Error('The recording was empty.')
+  const form = new FormData()
+  form.append('model', model)
+  form.append('file', new Blob([buffer], { type: mime || 'audio/webm' }), 'speech.webm')
+  const response = await fetch(`${base}/audio/transcriptions`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'X-TFY-METADATA': '{}',
+      'X-TFY-LOGGING-CONFIG': '{"enabled": true}',
+    },
+    body: form,
+    signal: AbortSignal.timeout(30000),
+  })
+  const data = await response.json().catch(() => ({}))
+  const text = typeof data?.text === 'string' ? data.text.trim() : ''
+  if (!response.ok || !text) {
+    const detail = data?.error?.message || data?.error
+    throw new Error(typeof detail === 'string' && detail ? detail : 'Transcription did not return words.')
+  }
+  return text
+}
+
 export async function phraseFacts(sentence) {
   const base = (process.env.TRUEFORGE_GATEWAY_URL || '').replace(/\/$/, '')
   const token = process.env.TRUEFORGE_ACCESS_TOKEN

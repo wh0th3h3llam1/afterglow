@@ -158,6 +158,28 @@ describe('afterglow hall', () => {
     expect(next.eventId).toBe('harbor')
     expect(visibleIds(next)).toContain('priya-harbor')
     expect(visibleIds(next)).not.toContain('priya')
+    const all = reduce(next, { type: 'set-event', id: 'all' })
+    expect(all.eventId).toBe('all')
+    expect(visibleIds(all)).toEqual(expect.arrayContaining(['priya', 'priya-harbor']))
+    expect(reduce(all, { type: 'select', id: 'priya' }).eventId).toBe('all')
+  })
+
+  it('adds a new meeting to the current hall', () => {
+    const state = reduce(initialState(), {
+      type: 'add-person',
+      id: 'met-ada',
+      name: 'Ada',
+      org: 'Loom',
+      email: 'ada@loom.example',
+      topic: 'Badges',
+      note: 'Met Ada from Loom.',
+      subject: 'Following up with Ada',
+      body: 'Hey Ada,\n\nMet Ada from Loom.\n\nAarsh',
+      now: '4:40 PM',
+    })
+    expect(state.activeId).toBe('met-ada')
+    expect(state.sessions['met-ada'].conferenceId).toBe('patch')
+    expect(visibleIds(state)).toContain('met-ada')
   })
 
   it('restores a review link', () => {

@@ -19,7 +19,7 @@ const NODE_COLOR: Record<string, string> = {
   Event: '#d7c4a3',
 }
 
-export function GraphPage({ onTranscript }: { onTranscript: (text: string) => void }) {
+export function GraphPage({ onText }: { onText: (text: string) => void }) {
   const [picture, setPicture] = useState<Picture | null>(null)
   const [error, setError] = useState('')
   const [hidden, setHidden] = useState<string[]>([])
@@ -84,7 +84,7 @@ export function GraphPage({ onTranscript }: { onTranscript: (text: string) => vo
         </a>
         <h1>Conference graph</h1>
         <div className="top-tools">
-          <VoiceButton onTranscript={onTranscript} />
+          <VoiceButton onText={onText} />
           <AgentNotice />
         </div>
       </header>

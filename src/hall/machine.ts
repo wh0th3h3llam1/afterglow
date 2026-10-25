@@ -153,8 +153,12 @@ export function footerLine(state: HallState) {
 
 export function visibleIds(state: HallState) {
   if (!state.revealHall) return [state.activeId]
-  const ids = PEOPLE.filter((person) => person.eventId === state.eventId).map((person) => person.id)
-  return ['new', ...ids].filter((id) => state.sessions[id])
+  const everyone = state.eventId === 'all'
+  const catalogIds = PEOPLE.filter((person) => everyone || person.eventId === state.eventId).map((person) => person.id)
+  const added = Object.values(state.sessions)
+    .filter((item) => item.id !== 'new' && (everyone || item.conferenceId === state.eventId) && !catalogIds.includes(item.id))
+    .map((item) => item.id)
+  return ['new', ...catalogIds, ...added].filter((id) => state.sessions[id])
 }
 
 function blankSession(): Session {
@@ -569,10 +573,13 @@ export function reduce(state: HallState, action: Action): HallState {
         activeId: action.id,
         chatOpen: true,
         entered: true,
-        eventId: conferenceId || state.eventId,
+        eventId: state.eventId === 'all' ? 'all' : conferenceId || state.eventId,
       }
     }
     case 'set-event': {
+      if (action.id === 'all') {
+        return { ...state, eventId: 'all', entered: true, revealHall: true, chatOpen: false }
+      }
       const ids = PEOPLE.filter((person) => person.eventId === action.id).map((person) => person.id)
       const stay = state.activeId === 'new' || ids.includes(state.activeId)
       return {
@@ -581,6 +588,36 @@ export function reduce(state: HallState, action: Action): HallState {
         entered: true,
         chatOpen: false,
         activeId: stay ? state.activeId : ids[0] || 'new',
+      }
+    }
+    case 'add-person': {
+      const eventKey = state.eventId === 'all' ? state.sessions[state.activeId]?.conferenceId || 'patch' : state.eventId
+      const event = EVENTS.find((item) => item.id === eventKey)
+      const session = sessionFrom({
+        id: action.id,
+        name: action.name,
+        org: action.org,
+        email: action.email,
+        topic: action.topic || 'A conversation',
+        note: action.note,
+        when: action.now,
+        conferenceId: eventKey,
+        conference: event?.name || '',
+        venue: event?.venue || '',
+        date: event?.date || '',
+        subject: action.subject,
+        body: action.body,
+        phase: action.subject && action.body ? 'draft' : 'clarify',
+        clarify: action.email ? 'repo' : 'email',
+        event: action.subject && action.body ? 'Draft ready' : 'What email should this letter use?',
+      })
+      return {
+        ...state,
+        revealHall: true,
+        entered: true,
+        activeId: action.id,
+        chatOpen: true,
+        sessions: { ...state.sessions, [action.id]: session },
       }
     }
     case 'step': {

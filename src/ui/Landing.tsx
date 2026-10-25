@@ -6,6 +6,28 @@ import { Mark } from './Mark'
 export function Landing({ dispatch }: { dispatch: Dispatch<Action> }) {
   return (
     <div className="landing">
+      <div className="landing-bg" aria-hidden="true">
+        <div className="landing-light" />
+        <div className="landing-floor" />
+        <div className="landing-stage">
+          <div className="landing-badge">
+            <span>Priya</span>
+            <small>Nimbus</small>
+          </div>
+          <div className="landing-badge">
+            <span>Mara</span>
+            <small>Loomline</small>
+          </div>
+          <div className="landing-badge">
+            <span>Elena</span>
+            <small>Ashlar</small>
+          </div>
+          <div className="landing-badge">
+            <span>Jonah</span>
+            <small>Northline</small>
+          </div>
+        </div>
+      </div>
       <header className="landing-bar">
         <p className="brand">
           <Mark />

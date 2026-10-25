@@ -20,6 +20,7 @@ export type VoiceIntent =
 export type HallCommand =
   | { nonce: number; kind: 'search'; query: string }
   | { nonce: number; kind: 'show'; query: string; sentence: string }
+  | { nonce: number; kind: 'fill'; query: string }
 
 type Listener = () => void
 
@@ -81,6 +82,21 @@ export function matchPeople(name: string, sessions: Session[]) {
   })
   if (affiliated.length) return affiliated
   return people.filter((item) => item.name.toLowerCase().includes(needle))
+}
+
+export function parseMeet(note: string) {
+  const met = note.match(/\bmet\s+([A-Za-z][\w'-]*)(?:\s+from\s+([^,.]+))?/i)
+  const name = met?.[1] ? met[1][0].toUpperCase() + met[1].slice(1) : ''
+  const org = met?.[2]?.trim() || ''
+  const email = note.match(/[\w.+-]+@[\w.-]+\.\w+/)?.[0] || ''
+  return {
+    name,
+    org,
+    email,
+    topic: 'A conversation',
+    subject: name ? `Following up with ${name}` : '',
+    body: name ? `Hey ${name},\n\n${note}\n\nAarsh` : '',
+  }
 }
 
 export function daySummary(sessions: Session[], eventId: string) {

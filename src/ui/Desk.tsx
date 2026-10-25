@@ -3,7 +3,8 @@ import gsap from 'gsap'
 import { EVENTS } from '../hall/fixtures'
 import { footerLine, pathView, promiseView, statusWord, visibleIds } from '../hall/machine'
 import { AgentNotice } from './AgentNotice'
-import { runSearch, type HallCommand } from './agents'
+import { AgentRail } from './AgentRail'
+import { finishAgent, parseMeet, runSearch, startAgent, type HallCommand } from './agents'
 import { Mark } from './Mark'
 import { PathGraph } from './PathGraph'
 import { VoiceButton } from './VoiceButton'
@@ -66,20 +67,54 @@ function promiseLabel(view: ReturnType<typeof promiseView>) {
   return 'Open'
 }
 
+function PeopleList({
+  state,
+  dispatch,
+  scroll,
+}: {
+  state: HallState
+  dispatch: Dispatch<Action>
+  scroll?: boolean
+}) {
+  return (
+    <ul className={scroll ? 'roster' : 'people'} aria-label="People">
+      {visibleIds(state).map((id) => {
+        const person = state.sessions[id]
+        const current = id === state.activeId
+        return (
+          <li key={id}>
+            <button
+              type="button"
+              className={current ? 'person current' : 'person'}
+              aria-current={current ? 'true' : undefined}
+              onClick={() => dispatch({ type: 'select', id })}
+            >
+              <span className="person-name">{person.name}</span>
+              <span className="person-topic">
+                {person.org || person.topic}
+                {state.eventId === 'all' && person.conference ? ` · ${person.conference}` : ''}
+              </span>
+              {!scroll && <span className="person-status">{statusWord(person)}</span>}
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 export function Desk({
   state,
   dispatch,
   narrow,
   renderer,
   command,
-  onTranscript,
 }: {
   state: HallState
   dispatch: Dispatch<Action>
   narrow: boolean
   renderer: 'webgl' | 'css'
   command: HallCommand | null
-  onTranscript: (text: string) => void
 }) {
   const session = state.sessions[state.activeId]
   const path = pathView(session)
@@ -87,6 +122,10 @@ export function Desk({
   const [question, setQuestion] = useState('')
   const [answer, setAnswer] = useState<{ sentence: string; people: Array<string | { id?: string; name: string }>; qodo?: string } | null>(null)
   const [asking, setAsking] = useState(false)
+  const [meet, setMeet] = useState('')
+  const [meetError, setMeetError] = useState('')
+  const [savingMeet, setSavingMeet] = useState(false)
+  const [sideOpen, setSideOpen] = useState(false)
   const [owes, setOwes] = useState<string[] | null>(null)
   const showActions = session.phase === 'draft' || session.phase === 'review'
   useEffect(() => {
@@ -94,6 +133,10 @@ export function Desk({
     if (command.kind === 'show') {
       setQuestion(command.query)
       setAnswer({ sentence: command.sentence, people: [] })
+      return
+    }
+    if (command.kind === 'fill') {
+      setQuestion(command.query)
       return
     }
     const text = command.query.trim()
@@ -104,6 +147,67 @@ export function Desk({
       .then((data) => setAnswer(data))
       .finally(() => setAsking(false))
   }, [command])
+
+  async function saveMeet(event: FormEvent) {
+    event.preventDefault()
+    const note = meet.trim()
+    if (!note || savingMeet) return
+    setSavingMeet(true)
+    setMeetError('')
+    const job = startAgent('Draft', 'Reading the new meeting')
+    const fallback = parseMeet(note)
+    try {
+      const response = await fetch('/api/followup', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ note, mode: state.mode }),
+      })
+      const data = response.ok ? await response.json() : null
+      const person = data?.name
+        ? {
+            name: String(data.name),
+            org: String(data.org || fallback.org),
+            email: String(data.email || fallback.email),
+            topic: String(data.topic || 'A conversation'),
+            subject: String(data.subject || fallback.subject),
+            body: String(data.body || fallback.body),
+          }
+        : fallback
+      if (!person.name) {
+        finishAgent(job, 'No name was in that note.', true)
+        setMeetError('Say who you met. For example: I met Ada from Loom.')
+        return
+      }
+      const id = `met-${person.name.toLowerCase().replace(/[^a-z0-9]+/g, '')}-${Date.now().toString(36)}`
+      finishAgent(job, `Badge ready for ${person.name}`)
+      dispatch({
+        type: 'add-person',
+        id,
+        note,
+        now: new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date()),
+        ...person,
+      })
+      setMeet('')
+    } catch {
+      if (!fallback.name) {
+        finishAgent(job, 'The meeting note did not go through.', true)
+        setMeetError('The meeting note did not go through.')
+        return
+      }
+      const id = `met-${fallback.name.toLowerCase().replace(/[^a-z0-9]+/g, '')}-${Date.now().toString(36)}`
+      finishAgent(job, `Badge ready for ${fallback.name}`)
+      dispatch({
+        type: 'add-person',
+        id,
+        note,
+        now: new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date()),
+        ...fallback,
+      })
+      setMeet('')
+    } finally {
+      setSavingMeet(false)
+    }
+  }
   useEffect(() => {
     setEditing(false)
   }, [session.id, session.version])
@@ -179,6 +283,7 @@ export function Desk({
                 {event.name}
               </option>
             ))}
+            <option value="all">All events</option>
           </select>
         </label>
         <form
@@ -234,13 +339,42 @@ export function Desk({
           )}
         </form>
         <div className="top-tools">
-          <VoiceButton onTranscript={onTranscript} />
+          <VoiceButton />
           <AgentNotice />
           <a className="nav-link" href="#graph">
             Graph
           </a>
         </div>
       </header>
+
+      <div className="side-stack" data-open={sideOpen ? 'true' : 'false'}>
+        <button
+          type="button"
+          className="side-toggle"
+          aria-expanded={sideOpen}
+          onClick={() => setSideOpen((open) => !open)}
+        >
+          {sideOpen ? 'Hide' : 'Agents'}
+        </button>
+        <AgentRail />
+        <form className="meet-card" onSubmit={saveMeet}>
+          <label htmlFor="meet">Add someone you met</label>
+          <textarea
+            id="meet"
+            name="meet"
+            value={meet}
+            placeholder="I met Ada from Loom after the talk."
+            onChange={(event) => setMeet(event.target.value)}
+          />
+          <div className="meet-actions">
+            <VoiceButton targetId="meet" />
+            <button className="fill" type="submit" disabled={savingMeet || meet.trim() === ''}>
+              {savingMeet ? 'Adding' : 'Add badge'}
+            </button>
+          </div>
+          {meetError && <p className="error">{meetError}</p>}
+        </form>
+      </div>
 
       <nav className="hall-nav" aria-label="Badges">
         <button type="button" onClick={() => dispatch({ type: 'step', dir: -1 })}>
@@ -250,6 +384,8 @@ export function Desk({
           Next
         </button>
       </nav>
+
+      {!state.chatOpen && state.revealHall && <PeopleList state={state} dispatch={dispatch} scroll />}
 
       <main className="desk" data-chat={state.chatOpen ? 'true' : 'false'} data-actions={showActions ? 'true' : 'false'}>
         <button
@@ -307,28 +443,7 @@ export function Desk({
             {disconnected && <p className="reason">TrueForge disconnected. Reconnect to write a follow-up.</p>}
           </form>
 
-          {state.revealHall && (
-            <ul className="people">
-              {visibleIds(state).map((id) => {
-                const person = state.sessions[id]
-                const current = id === state.activeId
-                return (
-                  <li key={id}>
-                    <button
-                      type="button"
-                      className={current ? 'person current' : 'person'}
-                      aria-current={current ? 'true' : undefined}
-                      onClick={() => dispatch({ type: 'select', id })}
-                    >
-                      <span className="person-name">{person.name}</span>
-                      <span className="person-topic">{person.topic}</span>
-                      <span className="person-status">{statusWord(person)}</span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
+          {state.revealHall && <PeopleList state={state} dispatch={dispatch} />}
         </section>
 
         <article className="face" id="face" aria-busy={session.phase === 'processing'}>

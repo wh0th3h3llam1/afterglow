@@ -2,8 +2,7 @@ import { useEffect, useReducer, useRef, useState } from 'react'
 import { applyParams, hydrate, initialState, reduce, serialize, STORAGE_KEY, writeQuery } from './hall/machine'
 import type { HallState } from './hall/types'
 import { Hall, webglOk } from './scene/Hall'
-import { AgentRail } from './ui/AgentRail'
-import { classifyVoice, daySummary, finishAgent, matchPeople, startAgent, type HallCommand } from './ui/agents'
+import { finishAgent, startAgent, type HallCommand } from './ui/agents'
 import { Desk } from './ui/Desk'
 import { GraphPage } from './ui/GraphPage'
 import { Landing } from './ui/Landing'
@@ -31,31 +30,7 @@ export function App() {
 
   function onTranscript(text: string) {
     if (window.location.hash === '#graph') window.location.hash = '#hall'
-    const intent = classifyVoice(text)
-    const nonce = ++commandNonce.current
-    if (intent.kind === 'day') {
-      const job = startAgent('Day', 'Summarizing this conference')
-      const sentence = daySummary(Object.values(state.sessions), state.eventId)
-      finishAgent(job, sentence)
-      setCommand({ nonce, kind: 'show', query: '', sentence })
-      return
-    }
-    if (intent.kind === 'followup') {
-      const found = matchPeople(intent.name, Object.values(state.sessions))
-      if (found.length === 1) {
-        dispatch({ type: 'select', id: found[0].id })
-        dispatch({ type: 'type-note', note: intent.note })
-        dispatch({ type: 'submit-note' })
-        return
-      }
-      const sentence =
-        found.length > 1
-          ? `${found.length} people match ${intent.name}. Pick one.`
-          : `Nobody named ${intent.name} is in the hall.`
-      setCommand({ nonce, kind: 'show', query: intent.name, sentence })
-      return
-    }
-    setCommand({ nonce, kind: 'search', query: intent.query })
+    setCommand({ nonce: ++commandNonce.current, kind: 'fill', query: text })
   }
 
   useEffect(() => {
@@ -179,7 +154,7 @@ export function App() {
     }
   }, [session.id, session.name, session.org, session.topic, session.email, session.phase])
 
-  if (page === 'graph') return <GraphPage onTranscript={onTranscript} />
+  if (page === 'graph') return <GraphPage onText={onTranscript} />
   if (!state.entered) return <Landing dispatch={dispatch} />
 
   return (
@@ -199,9 +174,7 @@ export function App() {
         narrow={narrow}
         renderer={renderer}
         command={command}
-        onTranscript={onTranscript}
       />
-      <AgentRail />
     </>
   )
 }
